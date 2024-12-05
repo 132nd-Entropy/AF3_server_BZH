@@ -1,6 +1,11 @@
 // controllers/logController.js
 
 const dockerService = require('../services/dockerService');
+/**
+ * Stream server logs to the client using Server-Sent Events (SSE).
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ */
 
 function streamServerLogs(req, res) {
     const jobId = req.query.jobId;
@@ -35,6 +40,28 @@ function streamServerLogs(req, res) {
         jobLogEmitter.removeListener('log', sendLog);
         res.end();
     });
+}
+/**
+ * Log job completion.
+ * @param {String} jobId - The ID of the completed job.
+ */
+function logJobCompletion(jobId) {
+    const completionMessage = `Job ${jobId} completed successfully.`;
+    console.log(completionMessage);
+    // Additional logging mechanisms can be added here
+    // For example, writing to a log file or sending notifications
+}
+
+/**
+ * Log job failure.
+ * @param {String} jobId - The ID of the failed job.
+ * @param {Error} error - The error that caused the failure.
+ */
+function logJobFailure(jobId, error) {
+    const failureMessage = `Job ${jobId} failed: ${error.message}`;
+    console.error(failureMessage);
+    // Additional logging mechanisms can be added here
+    // For example, writing to a log file or sending notifications
 }
 
 module.exports = {
