@@ -60,9 +60,3 @@ exports.runDockerJob = (jobId, filePath, callback) => {
 exports.getJobLogEmitter = (jobId) => {
     return jobLogEmitters[jobId];
 };
-
-// Function to retrieve the EventEmitter for a specific jobId
-exports.getJobLogEmitter = (jobId) => {
-    return jobLogEmitters[jobId];
-};
-
