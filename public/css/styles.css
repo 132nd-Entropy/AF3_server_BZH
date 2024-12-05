@@ -1,0 +1,122 @@
+/* General Styling */
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+            }
+            header {
+                background-color: #f8f8f8;
+                padding: 20px;
+                border-bottom: 1px solid #ddd;
+            }
+            header img {
+                max-width: 200px;
+                height: auto;
+            }
+            h2 {
+                margin: 10px 0;
+                font-size: 1.5rem;
+                color: #333;
+            }
+            main {
+                margin: 20px;
+                padding: 20px;
+            }
+            textarea,
+            input {
+                margin-top: 10px;
+                width: 100%;
+            }
+            .molecule-block {
+                border: 1px solid #ddd;
+                padding: 20px;
+                margin-bottom: 10px;
+                text-align: left;
+                max-width: 95%; /* Makes the block span almost the full screen */
+                margin: 20px auto; /* Center alignment */
+            }
+            .remove-button {
+                margin-top: 10px;
+                background-color: #ff4d4d;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                cursor: pointer;
+            }
+            #successMessage {
+                color: green;
+                margin-top: 20px;
+                font-weight: bold;
+            }
+            #queueStatus,
+            #completedJobs {
+                margin-top: 20px;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                text-align: left;
+                flex: 1;
+                max-width: 45%;
+            }
+            #jobSection {
+                display: flex;
+                justify-content: space-between;
+                margin: 0 auto;
+                max-width: 90%;
+            }
+            #queueList,
+            #completedJobsList {
+                font-size: 14px;
+            }
+            #projectName {
+                width: 20%; /* 1/5th of the screen */
+                margin: 0 auto;
+                display: block;
+                padding: 10px;
+                font-size: 16px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            label[for="projectName"] {
+                display: block;
+                font-size: 18px;
+                margin-bottom: 10px;
+            }
+            /* Matrix-style Docker Logs */
+            #dockerLogs {
+                margin-top: 20px;
+                padding: 10px;
+                border: 1px solid #0f0;
+                border-radius: 5px;
+                background-color: black;
+                color: #00ff00;
+                text-align: left;
+                font-family: "Courier New", Courier, monospace;
+                overflow: hidden;
+                max-width: 90%;
+                margin: 20px auto;
+            }
+            #logsDisplay {
+                background-color: black;
+                color: #00ff00;
+                font-family: "Courier New", Courier, monospace;
+                border: none;
+                outline: none;
+                resize: none;
+                width: 100%;
+                height: 300px;
+                overflow-y: auto;
+                box-shadow: 0px 0px 10px rgba(0, 255, 0, 0.6);
+            }
+            #logsDisplay::-webkit-scrollbar {
+                width: 8px;
+            }
+            #logsDisplay::-webkit-scrollbar-thumb {
+                background-color: #0f0;
+                border-radius: 5px;
+            }
+            #logsDisplay::-webkit-scrollbar-track {
+                background-color: black;
+            }

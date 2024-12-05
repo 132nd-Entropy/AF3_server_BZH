@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generate Input File for AlphaFold 3</title>
+    <!-- Link to external CSS -->
+    <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<script src="js/moleculeManager.js"></script>
+<script src="js/jobSubmission.js"></script>
+<script src="js/queueStatus.js"></script>
+<script src="js/logStreaming.js"></script>
+<script src="js/main.js"></script>
+
+
+<body>
+    <!-- Header -->
+    <header>
+        <img src="images/logo-trans.svg" alt="BZH Logo" />
+        <h2>Brügger Lab - Rainer Beck</h2>
+        <a href="user_guide.html" target="_blank">User Guide</a>
+    </header>
+    <!-- Job Queue and Completed Jobs -->
+    <section id="jobSection">
+        <div id="queueStatus">
+            <h3>Job Queue</h3>
+            <p id="currentJobDisplay">Loading current job...</p>
+            <div id="queueList">
+                <p>Loading queue...</p>
+            </div>
+        </div>
+
+        <div id="completedJobs">
+            <h3>Completed Jobs</h3>
+            <div id="completedJobsList">
+                <p>Loading completed jobs...</p>
+            </div>
+        </div>
+    </section>
+    <!-- Main Content -->
+    <main>
+    <h1>Generate Input File for AlphaFold 3</h1>
+    <label for="projectName">Prediction Name:</label>
+    <input type="text" id="projectName" placeholder="Enter Prediction ID" />
+    <br />
+    <br />
+    <div id="moleculeContainer">
+    </div>
+    <button id="addMoleculeButton">Add Another Molecule</button>
+    <br />
+    <br />
+    <button id="startPredictionButton" type="button">Start Prediction</button>
+    <p id="successMessage"></p>
+</main>
+
+    <!-- Docker Logs Section -->
+    <section id="dockerLogs">
+        <h3>Current Job Logs</h3>
+        <textarea id="logsDisplay" rows="20" readonly></textarea>
+    </section>
+    <!-- Link to external JavaScript -->
+
+</body>
+</html>
