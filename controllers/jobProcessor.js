@@ -2,6 +2,7 @@
 
 const { generateJSONFile } = require('./jsonGenerator');
 const { logJobCompletion, logJobFailure } = require('./logController');
+const dockerService = require('../services/dockerService');
 
 /**
  * Process a job: generate JSON and run AlphaFold prediction.
@@ -10,38 +11,34 @@ const { logJobCompletion, logJobFailure } = require('./logController');
 async function processJob(job) {
     try {
         // Step 1: Generate the JSON file
-        await generateJSONFile(job.filename, job.content);
+        const filePath = await generateJSONFile(job.filename, job.content);
 
         // Step 2: Invoke the Docker container to run AlphaFold
-        await runAlphaFold(job);
+        await runAlphaFold(job, filePath);
 
-        // Job status updates and logging are handled in queueController.js
+        // Job status updates and logging are handled here
+        logJobCompletion(job.id);
     } catch (error) {
+        // Log the failure
+        logJobFailure(job.id, error);
         // Re-throw the error to be handled by the caller
         throw error;
     }
 }
 
 /**
- * Function to run AlphaFold using Docker.
+ * Function to run AlphaFold using Docker through dockerService.
  * @param {Object} job - The job containing necessary data.
+ * @param {String} filePath - The path to the generated JSON file.
  */
-function runAlphaFold(job) {
+function runAlphaFold(job, filePath) {
     return new Promise((resolve, reject) => {
-        const { exec } = require('child_process');
-
-        // Example Docker command; adjust according to your setup
-        const command = `docker run --rm -v /path/to/input:/input -v /path/to/output:/output alphafold:latest /input/${job.filename}.json`;
-
-        exec(command, (error, stdout, stderr) => {
+        dockerService.runDockerJob(job.id, filePath, (error) => {
             if (error) {
                 console.error(`AlphaFold execution error for job ${job.id}:`, error);
                 return reject(error);
             }
-            console.log(`AlphaFold output for job ${job.id}:`, stdout);
-            if (stderr) {
-                console.error(`AlphaFold stderr for job ${job.id}:`, stderr);
-            }
+            console.log(`AlphaFold job ${job.id} completed successfully.`);
             resolve();
         });
     });
