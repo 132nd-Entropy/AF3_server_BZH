@@ -1,5 +1,6 @@
 // app.js
 
+const { v4: uuidv4 } = require('uuid');
 const express = require('express');
 const app = express();
 const queueController = require('./controllers/queueController');
@@ -23,7 +24,7 @@ app.post('/create-json', (req, res) => {
         return res.status(400).json({ error: 'Invalid job data.' });
     }
 
-    const jobId = Date.now().toString(); // Consider using UUIDs for production
+    const jobId = uuidv4(); // Generate unique job ID using UUID
     const job = {
         id: jobId,
         filename,
