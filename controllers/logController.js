@@ -1,46 +1,62 @@
-// controllers/logController.js
-
 const dockerService = require('../services/dockerService');
+
+
 /**
  * Stream server logs to the client using Server-Sent Events (SSE).
  * @param {Object} req - Express request object.
  * @param {Object} res - Express response object.
  */
-
 function streamServerLogs(req, res) {
     const jobId = req.query.jobId;
+
     if (!jobId) {
-        res.status(400).send('Job ID is required');
-        return;
+        return res.status(400).json({ error: 'Job ID is required' });
     }
 
     const jobLogEmitter = dockerService.getJobLogEmitter(jobId);
     if (!jobLogEmitter) {
-        res.status(404).send('Job not found or has no logs');
-        return;
+        return res.status(404).json({ error: 'Job not found or has no logs' });
     }
 
-    // Set headers for Server-Sent Events (SSE)
+    console.log(`[Job ${jobId}] Streaming logs...`);
+
     res.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         Connection: 'keep-alive',
     });
-    res.flushHeaders(); // Flush headers to establish SSE
+
+    res.flushHeaders();
 
     const sendLog = (log) => {
+        console.log(`[Job ${jobId}] Log sent: ${log}`);
         res.write(`data: ${log}\n\n`);
     };
 
-    // Listen for 'log' events and send them to the client
     jobLogEmitter.on('log', sendLog);
 
-    // Handle client disconnects
     req.on('close', () => {
+        console.log(`[Job ${jobId}] Connection closed`);
         jobLogEmitter.removeListener('log', sendLog);
         res.end();
     });
+
+    req.on('error', (err) => {
+        console.error(`[Job ${jobId}] Error in SSE connection: ${err.message}`);
+        res.end();
+    });
+
+    // Auto-cleanup in case the emitter becomes inactive
+    setTimeout(() => {
+        if (jobLogEmitter.listenerCount('log') === 0) {
+            console.log(`[Job ${jobId}] No active listeners; cleaning up`);
+            dockerService.cleanupEmitter(jobId);
+        }
+    }, 60000); // Clean up after 60 seconds
 }
+
+
+
 /**
  * Log job completion.
  * @param {String} jobId - The ID of the completed job.
@@ -48,8 +64,10 @@ function streamServerLogs(req, res) {
 function logJobCompletion(jobId) {
     const completionMessage = `Job ${jobId} completed successfully.`;
     console.log(completionMessage);
-    // Additional logging mechanisms can be added here
-    // For example, writing to a log file or sending notifications
+
+    // Placeholder for additional logging mechanisms
+    // Example: Append to a log file
+    // fs.appendFileSync('job_logs.txt', `${completionMessage}\n`);
 }
 
 /**
@@ -58,14 +76,19 @@ function logJobCompletion(jobId) {
  * @param {Error} error - The error that caused the failure.
  */
 function logJobFailure(jobId, error) {
-    const failureMessage = `Job ${jobId} failed: ${error.message}`;
-    console.error(failureMessage);
-    // Additional logging mechanisms can be added here
-    // For example, writing to a log file or sending notifications
+    console.error({
+        message: `Job ${jobId} failed`,
+        error: error.message,
+        stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
+    });
 }
+
+
 
 module.exports = {
     streamServerLogs,
     logJobCompletion,
     logJobFailure,
 };
+
+console.log('logController.js loaded successfully');

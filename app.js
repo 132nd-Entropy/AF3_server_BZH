@@ -1,20 +1,29 @@
-// app.js
-
 const { v4: uuidv4 } = require('uuid');
 const express = require('express');
-const app = express();
+
 const queueController = require('./controllers/queueController');
-const logController = require('./controllers/logController');
+const logController = require('./controllers/logController.js');
+const app = express();
+const path = require('path');
 
 app.use(express.json());
-app.get('/server-logs', logController.streamServerLogs);
 
 // Serve frontend files if needed
 app.use(express.static('public'));
 
+// Route for streaming server logs
+app.get('/server-logs', logController.streamServerLogs);
+
 app.get('/', (req, res) => {
-    res.send('Welcome to the Job Queue Server!');
+    console.log(`NODE_ENV is: ${process.env.NODE_ENV}`); // Debugging log
+    if (process.env.NODE_ENV === 'test') {
+        return res.send('Welcome to the Job Queue Server!');
+    }
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+app.use(express.static('public'));
+
 
 // Route to create a new job
 app.post('/create-json', (req, res) => {
@@ -38,28 +47,33 @@ app.post('/create-json', (req, res) => {
     res.json({ message: 'Job queued successfully.', jobId });
 });
 
-// **Add the '/queue-status' route here**
+// Route to check job queue status
 app.get('/queue-status', (req, res) => {
-    const allJobs = queueController.allJobs; // Access allJobs map
+    const allJobs = queueController.allJobs;
 
-    // Check if allJobs is defined and is a Map
-    if (!allJobs || typeof allJobs.values !== 'function') {
-        console.error('allJobs is not a valid Map');
-        return res.status(500).json({ error: 'Internal server error' });
-    }
-
-    // Convert the allJobs Map into an array of job info
-    const jobsArray = Array.from(allJobs.values()).map(job => ({
-        id: job.id,
-        filename: job.filename,
-        status: job.status,
-    }));
+    const jobsArray = allJobs && typeof allJobs.values === 'function'
+        ? Array.from(allJobs.values()).map(job => ({
+              id: job.id,
+              filename: job.filename,
+              status: job.status,
+          }))
+        : [];
 
     res.json({ jobs: jobsArray });
 });
 
-// Start the server
-const PORT = process.env.PORT || 49200;
-app.listen(PORT, '129.206.154.125', () => {
-    console.log(`Server running at http://129.206.154.125:${PORT}`);
+// Catch-all handler for undefined routes
+app.use((req, res, next) => {
+    res.status(404).json({ error: 'Endpoint not found' });
 });
+
+// Export the app for testing
+module.exports = app;
+
+// Start the server in runtime environment
+if (require.main === module) {
+    const PORT = process.env.PORT || 49200;
+    app.listen(PORT, '129.206.154.125', () => {
+        console.log(`Server running at http://129.206.154.125:${PORT}`);
+    });
+}

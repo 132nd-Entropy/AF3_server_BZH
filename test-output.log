@@ -1,0 +1,85 @@
+
+> af3_server@1.0.0 test
+> NODE_ENV=test jest
+
+  console.log
+    Job enqueued: 2ed5231a-4be4-4ee9-b7e4-ca669323c147 - test.txt
+
+      at Object.log [as enqueueJob] (controllers/queueController.js:18:17)
+
+  console.log
+    Processing job: 2ed5231a-4be4-4ee9-b7e4-ca669323c147
+
+      at log (controllers/queueController.js:37:17)
+
+  console.log
+    Processing job: 2ed5231a-4be4-4ee9-b7e4-ca669323c147 - test.txt
+
+      at Object.log [as processJob] (controllers/jobController.js:21:17)
+
+  console.log
+    Job 2ed5231a-4be4-4ee9-b7e4-ca669323c147 completed successfully.
+
+      at Object.log [as logJobCompletion] (controllers/logController.js:51:13)
+
+  console.log
+    Job completed: 2ed5231a-4be4-4ee9-b7e4-ca669323c147
+
+      at log (controllers/queueController.js:41:17)
+
+  console.log
+    Job enqueued: d7478469-27c2-4b3f-9ca5-4fee3124db1c - test-log.txt
+
+      at Object.log [as enqueueJob] (controllers/queueController.js:18:17)
+
+  console.log
+    Processing job: d7478469-27c2-4b3f-9ca5-4fee3124db1c
+
+      at log (controllers/queueController.js:37:17)
+
+  console.log
+    Processing job: d7478469-27c2-4b3f-9ca5-4fee3124db1c - test-log.txt
+
+      at Object.log [as processJob] (controllers/jobController.js:21:17)
+
+  console.log
+    Job d7478469-27c2-4b3f-9ca5-4fee3124db1c completed successfully.
+
+      at Object.log [as logJobCompletion] (controllers/logController.js:51:13)
+
+  console.log
+    Job completed: d7478469-27c2-4b3f-9ca5-4fee3124db1c
+
+      at log (controllers/queueController.js:41:17)
+
+FAIL tests/app.test.js (5.317 s)
+  API Endpoints
+    ✓ POST /create-json should enqueue a job and return jobId (44 ms)
+    ✓ GET /server-logs should return error if jobId is missing (4 ms)
+    ✕ GET /server-logs should return logs for a valid jobId (5001 ms)
+    ○ skipped GET / should return a welcome message in test environment
+
+  ● API Endpoints › GET /server-logs should return logs for a valid jobId
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      39 |     });
+      40 |
+    > 41 |     it('GET /server-logs should return logs for a valid jobId', async () => {
+         |     ^
+      42 |         const jobResponse = await request(app)
+      43 |             .post('/create-json')
+      44 |             .send({ filename: 'test-log.txt', content: 'Log test' });
+
+      at it (tests/app.test.js:41:5)
+      at Object.describe (tests/app.test.js:19:1)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 1 skipped, 2 passed, 4 total
+Snapshots:   0 total
+Time:        5.346 s, estimated 6 s
+Ran all test suites.
+Jest did not exit one second after the test run has completed.
+
+'This usually means that there are asynchronous operations that weren't stopped in your tests. Consider running Jest with `--detectOpenHandles` to troubleshoot this issue.
