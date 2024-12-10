@@ -1,6 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const express = require('express');
-
+const jsonGenerator = require('./controllers/jsonGenerator');
 const queueController = require('./controllers/queueController');
 const logController = require('./controllers/logController.js');
 const app = express();
@@ -26,25 +26,28 @@ app.use(express.static('public'));
 
 
 // Route to create a new job
-app.post('/create-json', (req, res) => {
+// Inside POST /create-json route
+app.post('/create-json', async (req, res) => {
     const { filename, content } = req.body;
 
     if (!filename || !content) {
         return res.status(400).json({ error: 'Invalid job data.' });
     }
 
-    const jobId = uuidv4(); // Generate unique job ID using UUID
-    const job = {
-        id: jobId,
-        filename,
-        content,
-        status: 'queued',
-    };
+    try {
+        const filePath = await jsonGenerator.generateJSONFile(filename, content);
+        console.log(`JSON file created at: ${filePath}`);
 
-    // Enqueue the job
-    queueController.enqueueJob(job);
+        const jobId = uuidv4();
+        const job = { id: jobId, filename, content, status: 'queued' };
 
-    res.json({ message: 'Job queued successfully.', jobId });
+        queueController.enqueueJob(job);
+
+        res.json({ message: 'Job queued successfully.', jobId, filePath });
+    } catch (error) {
+        console.error(`Failed to create JSON file: ${error.message}`);
+        res.status(500).json({ error: 'Failed to create JSON file.' });
+    }
 });
 
 // Route to check job queue status
@@ -73,7 +76,7 @@ module.exports = app;
 // Start the server in runtime environment
 if (require.main === module) {
     const PORT = process.env.PORT || 49200;
-    app.listen(PORT, '129.206.154.125', () => {
-        console.log(`Server running at http://129.206.154.125:${PORT}`);
+    app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running at http://129.206.154.125:${PORT}`);
     });
 }

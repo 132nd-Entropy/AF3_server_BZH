@@ -19,7 +19,7 @@ const waitForLogs = async (jobId, timeout = 30000) => {
 
 describe('API Endpoints', () => {
     // Skipped GET / test temporarily
-    it.skip('GET / should return a welcome message in test environment', async () => {
+    it('GET / should return a welcome message in test environment', async () => {
         const res = await request(app).get('/');
         expect(res.statusCode).toBe(200);
         expect(res.text).toBe('Welcome to the Job Queue Server!');
