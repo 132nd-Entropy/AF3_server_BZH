@@ -5,6 +5,7 @@ const queueController = require('./controllers/queueController');
 const logController = require('./controllers/logController.js');
 const app = express();
 const path = require('path');
+const dockerService = require('./services/dockerService'); // Ensure correct path
 
 app.use(express.json());
 
@@ -41,7 +42,20 @@ app.post('/create-json', async (req, res) => {
         const jobId = uuidv4();
         const job = { id: jobId, filename, content, status: 'queued' };
 
+        // Enqueue the job
         queueController.enqueueJob(job);
+
+        // Trigger Docker job after the job is enqueued
+        dockerService.runDockerJob(jobId, filePath, (error) => {
+            if (error) {
+                console.error(`Error running Docker job for ${jobId}:`, error);
+                job.status = 'failed';
+            } else {
+                console.log(`Docker job for ${jobId} completed successfully.`);
+                job.status = 'completed';
+            }
+            // Update job status in the job queue or logs here
+        });
 
         res.json({ message: 'Job queued successfully.', jobId, filePath });
     } catch (error) {
