@@ -17,10 +17,11 @@ exports.cleanupEmitter = (jobId) => {
 exports.runDockerJob = (jobId, filePath, callback) => {
     const dockerCommand = [
         'run',
-        '--rm',
+        '-i',
         '-v', '/home/entropy/output_alphafold3:/home/entropy/output_alphafold3',
         '-v', '/opt/alphafold3_database:/opt/alphafold3_database',
         '-v', '/opt/alphafold3_model:/opt/alphafold3_model',
+        '-v', '/home/entropy/AF3_server_BZH/job_data:/home/entropy/AF3_server_BZH/job_data',
         '--gpus', 'all',
         'alphafold3',
         'python3', 'run_alphafold.py',
