@@ -66,17 +66,9 @@ app.post('/create-json', async (req, res) => {
 
 // Route to check job queue status
 app.get('/queue-status', (req, res) => {
-    const allJobs = queueController.allJobs;
-
-    const jobsArray = allJobs && typeof allJobs.values === 'function'
-        ? Array.from(allJobs.values()).map(job => ({
-              id: job.id,
-              filename: job.filename,
-              status: job.status,
-          }))
-        : [];
-
-    res.json({ jobs: jobsArray });
+    const status = queueController.getQueueStatus();
+    console.log('Queue Status Response:', JSON.stringify(status, null, 2)); // Debugging log
+    res.json(status);
 });
 
 // Catch-all handler for undefined routes

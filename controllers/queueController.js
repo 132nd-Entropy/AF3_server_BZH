@@ -19,67 +19,71 @@ function enqueueJob(job) {
         jobQueue.push(job);
         allJobs.set(job.id, job); // Add to allJobs for status tracking
         console.log(`Job enqueued: ${job.id} - ${job.filename}`);
+        debugState(); // Debugging current state
         processQueue(); // Start processing the queue
     } catch (error) {
         console.error(`Failed to enqueue job: ${job.id}. Error: ${error.message}`);
     }
 }
 
-/**
- * Process the next job in the queue.
- */
 async function processQueue() {
-    if (isProcessing) return; // Already processing a job
+    if (isProcessing) {
+        console.log('A job is already processing. Waiting for it to complete.');
+        return; // Prevent new jobs from starting while one is running
+    }
+
     if (jobQueue.length === 0) {
         currentJob = null; // No jobs left to process
+        console.log('No jobs left in the queue.');
         return;
     }
 
-    isProcessing = true;
+    isProcessing = true; // Set processing to true
     currentJob = jobQueue.shift(); // Take the next job
     currentJob.status = 'processing';
-    allJobs.set(currentJob.id, { ...currentJob }); // Update status in allJobs
+    allJobs.set(currentJob.id, { ...currentJob }); // Update allJobs
+
+    console.log(`Processing job: ${currentJob.id}`);
 
     try {
-        console.log(`Starting job: ${currentJob.id} - ${currentJob.filename}`);
-
-        // Process the job (you can add pre-processing here if needed)
-        await jobController.processJob(currentJob);
+        console.log(`[Job ${currentJob.id}] Starting Docker container`);
 
         // Start the Docker job
         dockerService.runDockerJob(currentJob.id, currentJob.filename, (error) => {
             if (error) {
                 currentJob.status = 'failed';
-                logController.logJobFailure(currentJob.id, error);
                 console.error(`Job failed: ${currentJob.id}. Error: ${error.message}`);
+                logController.logJobFailure(currentJob.id, error);
             } else {
                 currentJob.status = 'completed';
-                logController.logJobCompletion(currentJob.id);
                 console.log(`Job completed: ${currentJob.id}`);
+                logController.logJobCompletion(currentJob.id);
             }
 
             // Update allJobs with the final status
             allJobs.set(currentJob.id, { ...currentJob });
 
-            // Move to the next job after this one finishes
-            isProcessing = false;
-            currentJob = null; // Clear the current job
-            processQueue();
+            // Reset state and move to the next job
+            isProcessing = false; // Allow the next job to be processed
+            currentJob = null;
+            processQueue(); // Process the next job in the queue
         });
     } catch (error) {
         currentJob.status = 'failed';
-        logController.logJobFailure(currentJob.id, error);
         console.error(`Job failed: ${currentJob.id}. Error: ${error.message}`);
-
-        // Update allJobs with the failure status
+        logController.logJobFailure(currentJob.id, error);
         allJobs.set(currentJob.id, { ...currentJob });
 
-        // Reset processing and move to the next job
-        isProcessing = false;
-        currentJob = null; // Clear the current job
-        processQueue();
+        // Reset state and move to the next job
+        isProcessing = false; // Allow the next job to be processed
+        currentJob = null;
+        processQueue(); // Process the next job in the queue
     }
 }
+
+
+
+
 
 /**
  * Get the current status of the queue and jobs.
@@ -88,8 +92,15 @@ function getQueueStatus() {
     const jobs = [
         ...(currentJob ? [{ ...currentJob, status: 'processing' }] : []),
         ...jobQueue.map((job, index) => ({ ...job, position: index + 1, status: 'queued' })),
-        ...Array.from(allJobs.values()).filter((job) => job.status === 'completed'),
+        ...Array.from(allJobs.values()).filter((job) => job.status === 'completed' || job.status === 'failed'),
     ];
+
+    console.log('--- Debugging /queue-status ---');
+    console.log('isProcessing:', isProcessing);
+    console.log('currentJob:', currentJob);
+    console.log('jobQueue:', JSON.stringify(jobQueue, null, 2));
+    console.log('allJobs:', JSON.stringify(Array.from(allJobs.values()), null, 2));
+    console.log('jobs:', JSON.stringify(jobs, null, 2));
 
     return {
         isProcessing,
@@ -99,24 +110,24 @@ function getQueueStatus() {
             position: index + 1,
         })),
         allJobs: Array.from(allJobs.values()),
-        jobs, // Consolidated job list for easier frontend consumption
+        jobs,
     };
 }
 
 /**
  * Debugging utility: Log the current state of the queue
  */
-function debugQueueState() {
-    console.log('--- Queue State ---');
+function debugState() {
+    console.log('--- Debugging Queue State ---');
     console.log('Job Queue:', jobQueue);
     console.log('Current Job:', currentJob);
     console.log('All Jobs:', Array.from(allJobs.values()));
-    console.log('-------------------');
+    console.log('-----------------------------');
 }
 
 module.exports = {
     enqueueJob,
     processQueue,
     getQueueStatus, // Export queue status for use in endpoints
-    debugQueueState,
+    debugState,
 };

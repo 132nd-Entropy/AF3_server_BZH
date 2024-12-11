@@ -5,11 +5,11 @@ const EventEmitter = require('events');
 const jobLogEmitters = {}; // Object to store per-job EventEmitters
 
 exports.runDockerJob = (jobId, filePath, callback) => {
-    // Ensure filePath has the .json extension
-    const filename = filePath.endsWith('.json') ? filePath : `${filePath}.json`;
+    // Ensure filePath ends with .json
+    const fullPath = filePath.endsWith('.json')
+        ? filePath
+        : `/home/entropy/AF3_server_BZH/job_data/${filePath}.json`;
 
-    // Construct the full path
-    const fullPath = `/home/entropy/AF3_server_BZH/job_data/${filename}`;
     console.log(`[Job ${jobId}] Full file path: ${fullPath}`);
 
     // Check if the file exists
@@ -36,42 +36,35 @@ exports.runDockerJob = (jobId, filePath, callback) => {
     ];
 
     console.log(`[Job ${jobId}] Starting Docker container with command: docker ${dockerCommand.join(' ')}`);
+
     const dockerProcess = spawn('docker', dockerCommand);
 
     // Create a new EventEmitter for this job
     const jobLogEmitter = new EventEmitter();
     jobLogEmitters[jobId] = jobLogEmitter;
 
-    // Listen for stdout data
     dockerProcess.stdout.on('data', (data) => {
         const log = data.toString();
         console.log(`[Job ${jobId}] STDOUT: ${log}`);
         jobLogEmitter.emit('log', log);
     });
 
-    // Listen for stderr data
     dockerProcess.stderr.on('data', (data) => {
         const log = data.toString();
         console.error(`[Job ${jobId}] STDERR: ${log}`);
         jobLogEmitter.emit('log', log);
     });
 
-    // Handle process close event
     dockerProcess.on('close', (code) => {
         console.log(`[Job ${jobId}] Docker process exited with code ${code}`);
         if (jobLogEmitters[jobId]) {
             jobLogEmitters[jobId].emit('log', `Docker process exited with code ${code}`);
-            jobLogEmitters[jobId].emit('close', code); // Signal job completion
+            jobLogEmitters[jobId].emit('close', code);
         }
-        delete jobLogEmitters[jobId]; // Clean up the emitter
-        if (code === 0) {
-            callback(null); // Job succeeded
-        } else {
-            callback(new Error(`[Job ${jobId}] Docker process exited with code ${code}`)); // Job failed
-        }
+        delete jobLogEmitters[jobId];
+        callback(code === 0 ? null : new Error(`[Job ${jobId}] Docker process exited with code ${code}`));
     });
 
-    // Handle process error event
     dockerProcess.on('error', (error) => {
         console.error(`[Job ${jobId}] Error starting Docker process: ${error.message}`);
         if (jobLogEmitters[jobId]) {
@@ -80,6 +73,7 @@ exports.runDockerJob = (jobId, filePath, callback) => {
         callback(new Error(`[Job ${jobId}] ${error.message}`));
     });
 };
+
 
 /**
  * Get the EventEmitter for a job's logs.

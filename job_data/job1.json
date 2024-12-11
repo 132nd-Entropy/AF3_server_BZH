@@ -1,0 +1,16 @@
+{
+  "name": "job1",
+  "sequences": [
+    {
+      "protein": {
+        "id": "A",
+        "sequence": "asdasdsadsadasdasdasdasdfasdadasasdaadasdasdasdadasdasdsad"
+      }
+    }
+  ],
+  "dialect": "alphafold3",
+  "version": 1,
+  "modelSeeds": [
+    1
+  ]
+}
