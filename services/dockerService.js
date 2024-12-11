@@ -2,6 +2,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const EventEmitter = require('events');
 const jobLogEmitters = {}; // Object to store per-job EventEmitters
+const jobLogs = {}; // Persistent storage for logs
 
 /**
  * Run a Docker job.
@@ -106,3 +107,4 @@ module.exports = {
     getJobLogEmitter,
     cleanupEmitter,
 };
+

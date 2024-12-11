@@ -20,3 +20,17 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchQueueStatus();
     setInterval(fetchQueueStatus, 5000); // Poll every 5 seconds
 });
+
+
+
+if (currentJob && currentJob.id) {
+    fetch(`/get-logs?jobId=${currentJob.id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.logs) {
+                const logsDisplay = document.getElementById('logsDisplay');
+                logsDisplay.value = data.logs.join('\n');
+            }
+        })
+        .catch(error => console.error('Error fetching logs:', error));
+}

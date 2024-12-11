@@ -14,7 +14,6 @@ function streamServerLogs(req, res) {
 
     const jobLogEmitter = dockerService.getJobLogEmitter(jobId);
     if (!jobLogEmitter) {
-        console.error(`[Job ${jobId}] Job not found or has no logs`);
         return res.status(404).json({ error: 'Job not found or has no logs' });
     }
 
@@ -33,29 +32,41 @@ function streamServerLogs(req, res) {
         res.write(`data: ${log}\n\n`);
     };
 
-    const handleCleanup = () => {
-        console.log(`[Job ${jobId}] Cleaning up SSE connection`);
-        jobLogEmitter.removeListener('log', sendLog);
-        dockerService.cleanupEmitter(jobId); // Ensure cleanup is called
-        res.end();
-    };
-
     jobLogEmitter.on('log', sendLog);
 
-    req.on('close', handleCleanup);
+    req.on('close', () => {
+        console.log(`[Job ${jobId}] Connection closed`);
+        jobLogEmitter.removeListener('log', sendLog);
+        res.end();
+    });
+
     req.on('error', (err) => {
         console.error(`[Job ${jobId}] Error in SSE connection: ${err.message}`);
-        handleCleanup();
+        res.end();
     });
 
     // Auto-cleanup in case the emitter becomes inactive
-    const cleanupTimeout = parseInt(process.env.SSE_CLEANUP_TIMEOUT || '60000', 10); // Default 60 seconds
     setTimeout(() => {
         if (jobLogEmitter.listenerCount('log') === 0) {
-            console.log(`[Job ${jobId}] No active listeners; auto-cleaning up`);
-            handleCleanup();
+            console.log(`[Job ${jobId}] No active listeners; cleaning up`);
+            dockerService.cleanupEmitter(jobId);
         }
-    }, cleanupTimeout);
+    }, 60000); // Clean up after 60 seconds
+}
+
+/**
+ * Fetch logs for the current job when the frontend initializes.
+ * @param {String} currentJobId - The ID of the currently processing job.
+ */
+function fetchCurrentLogs(currentJobId) {
+    const jobLogEmitter = dockerService.getJobLogEmitter(currentJobId);
+
+    if (jobLogEmitter) {
+        console.log(`[Job ${currentJobId}] Fetching existing logs on reconnect`);
+        jobLogEmitter.emit('log', 'Reconnecting to logs...');
+    } else {
+        console.log(`[Job ${currentJobId}] No existing logs found for reconnection.`);
+    }
 }
 
 /**
@@ -65,10 +76,6 @@ function streamServerLogs(req, res) {
 function logJobCompletion(jobId) {
     const completionMessage = `Job ${jobId} completed successfully.`;
     console.log(completionMessage);
-
-    // Placeholder for additional logging mechanisms
-    // Example: Append to a log file
-    // fs.appendFileSync('job_logs.txt', `${completionMessage}\n`);
 }
 
 /**
@@ -82,14 +89,11 @@ function logJobFailure(jobId, error) {
         error: error.message,
         stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
     });
-
-    // Placeholder for additional logging mechanisms
-    // Example: Append to a log file
-    // fs.appendFileSync('job_errors.txt', `Job ${jobId} failed: ${error.message}\n`);
 }
 
 module.exports = {
     streamServerLogs,
+    fetchCurrentLogs, // Exported for frontend initialization
     logJobCompletion,
     logJobFailure,
 };

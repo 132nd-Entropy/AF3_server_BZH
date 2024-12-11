@@ -34,3 +34,30 @@ async function fetchQueueStatus() {
         document.getElementById("completedJobsList").innerHTML = "<p>Unable to load completed jobs.</p>";
     }
 }
+async function reconnectToLogs() {
+    try {
+        const response = await fetch('/queue-status');
+        if (!response.ok) throw new Error(`Failed to fetch queue status: ${response.statusText}`);
+
+        const { currentJob } = await response.json();
+
+        if (currentJob && currentJob.id) {
+            console.log(`Reconnecting to logs for job ${currentJob.id}...`);
+
+            // Call the reconnect-logs endpoint
+            const reconnectResponse = await fetch(`/reconnect-logs?jobId=${currentJob.id}`);
+            if (!reconnectResponse.ok) throw new Error('Failed to reconnect to logs.');
+
+            // Start streaming logs again
+            fetchCurrentLogs(currentJob.id);
+        } else {
+            console.log('No current job to reconnect to.');
+        }
+    } catch (error) {
+        console.error('Error reconnecting to logs:', error);
+    }
+}
+
+// Call this function on page load
+document.addEventListener('DOMContentLoaded', reconnectToLogs);
+

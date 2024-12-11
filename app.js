@@ -3,8 +3,10 @@ const express = require('express');
 const jsonGenerator = require('./controllers/jsonGenerator');
 const queueController = require('./controllers/queueController');
 const logController = require('./controllers/logController.js');
+
 const app = express();
 const path = require('path');
+
 const dockerService = require('./services/dockerService'); // Ensure correct path
 
 app.use(express.json());
@@ -12,8 +14,25 @@ app.use(express.json());
 // Serve frontend files if needed
 app.use(express.static('public'));
 
+
 // Route for streaming server logs
 app.get('/server-logs', logController.streamServerLogs);
+
+app.get('/reconnect-logs', (req, res) => {
+    const { jobId } = req.query;
+
+    if (!jobId) {
+        return res.status(400).json({ error: 'Job ID is required' });
+    }
+
+    const jobLogEmitter = dockerService.getJobLogEmitter(jobId);
+
+    if (jobLogEmitter) {
+        res.status(200).json({ message: `Reconnected to logs for job ${jobId}` });
+    } else {
+        res.status(404).json({ error: 'No logs found for this job.' });
+    }
+});
 
 app.get('/', (req, res) => {
     console.log(`NODE_ENV is: ${process.env.NODE_ENV}`); // Debugging log
@@ -22,6 +41,23 @@ app.get('/', (req, res) => {
     }
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+app.get('/get-logs', (req, res) => {
+    const { jobId } = req.query;
+
+    if (!jobId) {
+        return res.status(400).json({ error: 'Job ID is required' });
+    }
+
+    const logs = dockerService.getPersistentLogs(jobId);
+
+    if (!logs.length) {
+        return res.status(404).json({ error: 'No logs found for this job.' });
+    }
+
+    res.json({ logs });
+});
+
 
 app.use(express.static('public'));
 
