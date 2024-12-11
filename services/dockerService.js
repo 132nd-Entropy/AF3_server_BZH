@@ -1,20 +1,24 @@
 const { spawn } = require('child_process');
+const fs = require('fs');
 const EventEmitter = require('events');
 
 const jobLogEmitters = {}; // Object to store per-job EventEmitters
-const isTestEnv = process.env.NODE_ENV === 'test';
-exports.cleanupEmitter = (jobId) => {
-    delete jobLogEmitters[jobId];
-};
 
-
-/**
- * Run a Docker job.
- * @param {string} jobId - Unique job identifier.
- * @param {string} filePath - Path to the JSON file for the job.
- * @param {function} callback - Callback to handle job completion or errors.
- */
 exports.runDockerJob = (jobId, filePath, callback) => {
+    // Ensure filePath has the .json extension
+    const filename = filePath.endsWith('.json') ? filePath : `${filePath}.json`;
+
+    // Construct the full path
+    const fullPath = `/home/entropy/AF3_server_BZH/job_data/${filename}`;
+    console.log(`[Job ${jobId}] Full file path: ${fullPath}`);
+
+    // Check if the file exists
+    if (!fs.existsSync(fullPath)) {
+        console.error(`[Job ${jobId}] File not found: ${fullPath}`);
+        callback(new Error(`[Job ${jobId}] File not found: ${fullPath}`));
+        return;
+    }
+
     const dockerCommand = [
         'run',
         '-i',
@@ -25,14 +29,13 @@ exports.runDockerJob = (jobId, filePath, callback) => {
         '--gpus', 'all',
         'alphafold3',
         'python3', 'run_alphafold.py',
-        `--json_path=${filePath}`,
+        `--json_path=${fullPath}`,
         '--model_dir=/opt/alphafold3_model',
         '--db_dir=/opt/alphafold3_database',
         '--output_dir=/home/entropy/output_alphafold3',
     ];
 
     console.log(`[Job ${jobId}] Starting Docker container with command: docker ${dockerCommand.join(' ')}`);
-
     const dockerProcess = spawn('docker', dockerCommand);
 
     // Create a new EventEmitter for this job
@@ -98,4 +101,3 @@ exports.getJobLogEmitter = (jobId) => {
     }
     return jobLogEmitters[jobId];
 };
-

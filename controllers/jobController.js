@@ -18,14 +18,11 @@ function createJob(req, res) {
 
 function processJob(job) {
     try {
-        console.log(`Processing job: ${job.id} - ${job.filename}`);
-        // Simulate job processing logic
-        job.status = 'completed'; // Mark the job as completed
+        // Placeholder for any job pre-processing logic if needed
     } catch (error) {
-        // Handle job processing errors
         console.error(`Failed to process job: ${job.id}. Error: ${error.message}`);
-        job.status = 'failed'; // Mark the job as failed
-        throw error; // Re-throw the error for logging or further handling
+        job.status = 'failed';
+        throw error;
     }
 }
 
