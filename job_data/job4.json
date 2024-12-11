@@ -1,10 +1,10 @@
 {
-  "name": "job2",
+  "name": "job4",
   "sequences": [
     {
       "protein": {
         "id": "A",
-        "sequence": "asdasdsadsadasdasdasdasdfasdadasasdaadasdasdasdadasdasdsadggggggggggg"
+        "sequence": "asdasdsadsadasdasdasdasdfasdadasasda"
       }
     }
   ],

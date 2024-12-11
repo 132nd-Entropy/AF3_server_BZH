@@ -1,18 +1,21 @@
 const { spawn } = require('child_process');
 const fs = require('fs');
 const EventEmitter = require('events');
-
 const jobLogEmitters = {}; // Object to store per-job EventEmitters
 
-exports.runDockerJob = (jobId, filePath, callback) => {
-    // Ensure filePath ends with .json
+/**
+ * Run a Docker job.
+ * @param {string} jobId - Unique job identifier.
+ * @param {string} filePath - Path to the JSON file for the job.
+ * @param {function} callback - Callback to handle job completion or errors.
+ */
+function runDockerJob(jobId, filePath, callback) {
     const fullPath = filePath.endsWith('.json')
         ? filePath
         : `/home/entropy/AF3_server_BZH/job_data/${filePath}.json`;
 
     console.log(`[Job ${jobId}] Full file path: ${fullPath}`);
 
-    // Check if the file exists
     if (!fs.existsSync(fullPath)) {
         console.error(`[Job ${jobId}] File not found: ${fullPath}`);
         callback(new Error(`[Job ${jobId}] File not found: ${fullPath}`));
@@ -38,8 +41,6 @@ exports.runDockerJob = (jobId, filePath, callback) => {
     console.log(`[Job ${jobId}] Starting Docker container with command: docker ${dockerCommand.join(' ')}`);
 
     const dockerProcess = spawn('docker', dockerCommand);
-
-    // Create a new EventEmitter for this job
     const jobLogEmitter = new EventEmitter();
     jobLogEmitters[jobId] = jobLogEmitter;
 
@@ -72,26 +73,36 @@ exports.runDockerJob = (jobId, filePath, callback) => {
         }
         callback(new Error(`[Job ${jobId}] ${error.message}`));
     });
-};
-
+}
 
 /**
  * Get the EventEmitter for a job's logs.
  * @param {string} jobId - The job ID.
  * @returns {EventEmitter|null} - The EventEmitter for the job logs or null if not found.
  */
-exports.getJobLogEmitter = (jobId) => {
+function getJobLogEmitter(jobId) {
     if (!jobLogEmitters[jobId]) {
         const emitter = new EventEmitter();
         jobLogEmitters[jobId] = emitter;
-
-        // Simulate log generation for testing
-        setTimeout(() => emitter.emit('log', `Log entry for job ${jobId}`), 500);
-        setTimeout(() => emitter.emit('log', `Final log for job ${jobId}`), 1000);
-        setTimeout(() => {
-            emitter.emit('close', 0); // Simulate job completion
-            delete jobLogEmitters[jobId];
-        }, 1500);
     }
     return jobLogEmitters[jobId];
+}
+
+/**
+ * Cleanup an emitter for a job.
+ * @param {string} jobId - The job ID.
+ */
+function cleanupEmitter(jobId) {
+    if (jobLogEmitters[jobId]) {
+        console.log(`[Job ${jobId}] Cleaning up job emitter`);
+        delete jobLogEmitters[jobId];
+    } else {
+        console.log(`[Job ${jobId}] No emitter found to clean up`);
+    }
+}
+
+module.exports = {
+    runDockerJob,
+    getJobLogEmitter,
+    cleanupEmitter,
 };

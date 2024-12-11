@@ -1,6 +1,5 @@
 const dockerService = require('../services/dockerService');
 
-
 /**
  * Stream server logs to the client using Server-Sent Events (SSE).
  * @param {Object} req - Express request object.
@@ -15,6 +14,7 @@ function streamServerLogs(req, res) {
 
     const jobLogEmitter = dockerService.getJobLogEmitter(jobId);
     if (!jobLogEmitter) {
+        console.error(`[Job ${jobId}] Job not found or has no logs`);
         return res.status(404).json({ error: 'Job not found or has no logs' });
     }
 
@@ -33,29 +33,30 @@ function streamServerLogs(req, res) {
         res.write(`data: ${log}\n\n`);
     };
 
+    const handleCleanup = () => {
+        console.log(`[Job ${jobId}] Cleaning up SSE connection`);
+        jobLogEmitter.removeListener('log', sendLog);
+        dockerService.cleanupEmitter(jobId); // Ensure cleanup is called
+        res.end();
+    };
+
     jobLogEmitter.on('log', sendLog);
 
-    req.on('close', () => {
-        console.log(`[Job ${jobId}] Connection closed`);
-        jobLogEmitter.removeListener('log', sendLog);
-        res.end();
-    });
-
+    req.on('close', handleCleanup);
     req.on('error', (err) => {
         console.error(`[Job ${jobId}] Error in SSE connection: ${err.message}`);
-        res.end();
+        handleCleanup();
     });
 
     // Auto-cleanup in case the emitter becomes inactive
+    const cleanupTimeout = parseInt(process.env.SSE_CLEANUP_TIMEOUT || '60000', 10); // Default 60 seconds
     setTimeout(() => {
         if (jobLogEmitter.listenerCount('log') === 0) {
-            console.log(`[Job ${jobId}] No active listeners; cleaning up`);
-            dockerService.cleanupEmitter(jobId);
+            console.log(`[Job ${jobId}] No active listeners; auto-cleaning up`);
+            handleCleanup();
         }
-    }, 60000); // Clean up after 60 seconds
+    }, cleanupTimeout);
 }
-
-
 
 /**
  * Log job completion.
@@ -81,9 +82,11 @@ function logJobFailure(jobId, error) {
         error: error.message,
         stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
     });
+
+    // Placeholder for additional logging mechanisms
+    // Example: Append to a log file
+    // fs.appendFileSync('job_errors.txt', `Job ${jobId} failed: ${error.message}\n`);
 }
-
-
 
 module.exports = {
     streamServerLogs,

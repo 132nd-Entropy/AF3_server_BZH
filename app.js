@@ -27,7 +27,7 @@ app.use(express.static('public'));
 
 
 // Route to create a new job
-// Inside POST /create-json route
+
 app.post('/create-json', async (req, res) => {
     const { filename, content } = req.body;
 
@@ -42,20 +42,8 @@ app.post('/create-json', async (req, res) => {
         const jobId = uuidv4();
         const job = { id: jobId, filename, content, status: 'queued' };
 
-        // Enqueue the job
+        // Enqueue the job via the queue controller
         queueController.enqueueJob(job);
-
-        // Trigger Docker job after the job is enqueued
-        dockerService.runDockerJob(jobId, filePath, (error) => {
-            if (error) {
-                console.error(`Error running Docker job for ${jobId}:`, error);
-                job.status = 'failed';
-            } else {
-                console.log(`Docker job for ${jobId} completed successfully.`);
-                job.status = 'completed';
-            }
-            // Update job status in the job queue or logs here
-        });
 
         res.json({ message: 'Job queued successfully.', jobId, filePath });
     } catch (error) {
@@ -63,6 +51,7 @@ app.post('/create-json', async (req, res) => {
         res.status(500).json({ error: 'Failed to create JSON file.' });
     }
 });
+
 
 // Route to check job queue status
 app.get('/queue-status', (req, res) => {

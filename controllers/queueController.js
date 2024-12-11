@@ -27,60 +27,55 @@ function enqueueJob(job) {
 }
 
 async function processQueue() {
+    console.log('Entering processQueue');
     if (isProcessing) {
-        console.log('A job is already processing. Waiting for it to complete.');
-        return; // Prevent new jobs from starting while one is running
-    }
-
-    if (jobQueue.length === 0) {
-        currentJob = null; // No jobs left to process
-        console.log('No jobs left in the queue.');
+        console.log('Already processing a job. Exiting processQueue.');
         return;
     }
 
-    isProcessing = true; // Set processing to true
+    if (jobQueue.length === 0) {
+        console.log('Job queue is empty. Exiting processQueue.');
+        currentJob = null;
+        return;
+    }
+
+    isProcessing = true; // Lock the processing state immediately
     currentJob = jobQueue.shift(); // Take the next job
     currentJob.status = 'processing';
-    allJobs.set(currentJob.id, { ...currentJob }); // Update allJobs
-
+    allJobs.set(currentJob.id, { ...currentJob });
     console.log(`Processing job: ${currentJob.id}`);
 
     try {
         console.log(`[Job ${currentJob.id}] Starting Docker container`);
-
-        // Start the Docker job
         dockerService.runDockerJob(currentJob.id, currentJob.filename, (error) => {
             if (error) {
                 currentJob.status = 'failed';
-                console.error(`Job failed: ${currentJob.id}. Error: ${error.message}`);
                 logController.logJobFailure(currentJob.id, error);
+                console.error(`Job failed: ${currentJob.id}. Error: ${error.message}`);
             } else {
                 currentJob.status = 'completed';
-                console.log(`Job completed: ${currentJob.id}`);
                 logController.logJobCompletion(currentJob.id);
+                console.log(`Job completed: ${currentJob.id}`);
             }
 
-            // Update allJobs with the final status
+            // Update allJobs and reset processing
             allJobs.set(currentJob.id, { ...currentJob });
-
-            // Reset state and move to the next job
-            isProcessing = false; // Allow the next job to be processed
+            isProcessing = false;
             currentJob = null;
-            processQueue(); // Process the next job in the queue
+            processQueue(); // Process the next job
         });
     } catch (error) {
         currentJob.status = 'failed';
-        console.error(`Job failed: ${currentJob.id}. Error: ${error.message}`);
         logController.logJobFailure(currentJob.id, error);
+        console.error(`Job failed: ${currentJob.id}. Error: ${error.message}`);
         allJobs.set(currentJob.id, { ...currentJob });
 
-        // Reset state and move to the next job
-        isProcessing = false; // Allow the next job to be processed
+        // Reset processing
+        isProcessing = false;
         currentJob = null;
-        processQueue(); // Process the next job in the queue
+        processQueue();
     }
 }
-
 
 
 
