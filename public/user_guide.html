@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Guide - AlphaFold 3 Frontend</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+        header {
+            background: #333;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        nav {
+            text-align: center;
+            margin: 20px 0;
+        }
+        nav a {
+            margin: 0 10px;
+            color: #333;
+            text-decoration: none;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        section {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            max-width: 800px;
+            padding: 20px;
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #f4f4f9;
+            padding-bottom: 5px;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        footer {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .highlight {
+            background: #333;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Brügger Lab AlphaFold 3 Frontend User Guide</h1>
+    </header>
+    <nav>
+        <a href="#overview">Overview</a>
+        <a href="#job-queue">Job Queue</a>
+        <a href="#adding-job">Adding a Job</a>
+        <a href="#viewing-logs">Viewing Logs</a>
+        <a href="#troubleshooting">Troubleshooting</a>
+    </nav>
+    <section id="overview">
+        <h2>Overview</h2>
+        <p>Welcome to the AlphaFold 3 Job Management Frontend by AG Brügger! This interface allows you to manage jobs, monitor logs, and review completed tasks efficiently. This guide explains the key functionalities and steps to use the application.</p>
+    </section>
+    <section id="job-queue">
+        <h2>Job Queue</h2>
+        <p>The job queue is divided into three sections:</p>
+        <ul>
+            <li><strong>Currently Processing:</strong> Displays the name of the job currently being processed.</li>
+            <li><strong>Pending Jobs:</strong> Lists jobs in the queue waiting for execution, along with their positions.</li>
+            <li><strong>Completed Jobs:</strong> Shows finished jobs with their filenames and completion timestamps.</li>
+        </ul>
+    </section>
+    <section id="adding-job">
+        <h2>Adding a Job</h2>
+        <p>Follow these steps to add a job:</p>
+        <ol>
+            <li>Enter a <strong>Prediction Name</strong> (e.g., <span class="highlight">protein_analysis_01</span>).</li>
+            <li>Select a <strong>Molecule Type</strong> (e.g., Protein, RNA, DNA, Ligand, or Ion).</li>
+            <li>Enter the <strong>Molecule Sequence</strong> or <strong>CCD Code</strong> (for Ligands/Ions).</li>
+            <li>Click <strong>Start Prediction</strong> to add the job to the queue.</li>
+        </ol>
+        <p><strong>Note:</strong> Ensure the input is valid for the selected molecule type:</p>
+        <ul>
+            <li><strong>Protein:</strong> Valid amino acids (<span class="highlight">ARNDCEQGHILKMFPSTWYV</span>)</li>
+            <li><strong>RNA:</strong> Valid nucleotides (<span class="highlight">AUGC</span>)</li>
+            <li><strong>DNA:</strong> Valid nucleotides (<span class="highlight">ATGC</span>)</li>
+            <li><strong>Ligand/Ion:</strong> Valid CCD codes (alphanumeric)</li>
+        </ul>
+    </section>
+    <section id="viewing-logs">
+        <h2>Viewing Logs</h2>
+        <p>Logs for the currently running job are displayed in real-time:</p>
+        <ul>
+            <li>The logs show the progress and details of the job execution.</li>
+            <li>If no job is running, the log display will show <span class="highlight">[No logs available]</span>.</li>
+            <li>The log viewer automatically scrolls to the latest entry for convenience.</li>
+        </ul>
+    </section>
+    <section id="troubleshooting">
+        <h2>Troubleshooting</h2>
+        <p>If you encounter issues, try the following steps:</p>
+        <ul>
+            <li><strong>No Logs Displayed:</strong> Ensure a job is running. Refresh the page if necessary.</li>
+            <li><strong>Queue Not Updating:</strong> Wait for a few seconds, as the queue refreshes automatically every 5 seconds.</li>
+            <li><strong>Invalid Sequence Error:</strong> Check the input format for the molecule type.</li>
+            <li><strong>Backend Not Responding:</strong> Verify the server is running on the correct port (<span class="highlight">49200</span>).</li>
+        </ul>
+    </section>
+    <footer>
+        &copy; 2024 Brügger Lab. All rights reserved.
+    </footer>
+</body>
+</html>
