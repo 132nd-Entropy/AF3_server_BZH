@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // Routes
-app.get('/api/logs/stream', logController.streamServerLogs);
+app.get('/stream-logs', logController.streamServerLogs);
 
 
 app.get('/reconnect-logs', (req, res) => {

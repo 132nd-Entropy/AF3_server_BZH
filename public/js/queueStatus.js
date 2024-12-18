@@ -1,7 +1,6 @@
-// js/queuestatus.js
-import { startServerLogStreaming } from './logStreaming.js';
+import { startServerLogStreaming, fetchCurrentLogs } from './logStreaming.js';
 
-let currentJob = null; // Declare currentJob globally in queuestatus.js
+let currentJob = null;
 
 export async function fetchQueueStatus() {
     try {
@@ -11,61 +10,80 @@ export async function fetchQueueStatus() {
         const data = await response.json();
         console.log('Queue status data:', data);
 
-        // Assign the currently processing job to global currentJob
         currentJob = data.jobs.find(job => job.status === 'processing');
 
-        // Extract queued and completed jobs
         const queue = data.jobs.filter(job => job.status === 'queued');
         const completedJobs = data.jobs.filter(job => job.status === 'completed');
 
-        // Update the currently processing job display
-        document.getElementById("currentJobDisplay").innerHTML = currentJob
-            ? `<p>Currently Processing: <strong>${currentJob.filename}</strong></p>`
-            : "<p>No job is currently processing.</p>";
+        const currentJobDisplay = document.getElementById("currentJobDisplay");
+        if (currentJobDisplay) {
+            currentJobDisplay.innerHTML = currentJob
+                ? `<p>Currently Processing: <strong>${currentJob.filename}</strong></p>`
+                : "<p>No job is currently processing.</p>";
+        }
 
-        // Update the pending jobs list
-        document.getElementById("queueList").innerHTML = queue.length
-            ? `<p><strong>Pending Jobs:</strong></p><ul>${queue.map((job, index) => `<li>Position ${index + 1}: ${job.filename}</li>`).join("")}</ul>`
-            : "<p>No jobs in the queue.</p>";
+        const queueList = document.getElementById("queueList");
+        if (queueList) {
+            queueList.innerHTML = queue.length
+                ? `<p><strong>Pending Jobs:</strong></p><ul>${queue.map((job, index) => `<li>Position ${index + 1}: ${job.filename}</li>`).join("")}</ul>`
+                : "<p>No jobs in the queue.</p>";
+        }
 
-        // Update the completed jobs list
-        document.getElementById("completedJobsList").innerHTML = completedJobs.length
-            ? `<p><strong>Completed Jobs:</strong></p><ul>${completedJobs.map(job => `<li>${job.filename}</li>`).join("")}</ul>`
-            : "<p>No completed jobs yet.</p>";
+        const completedJobsList = document.getElementById("completedJobsList");
+        if (completedJobsList) {
+            completedJobsList.innerHTML = completedJobs.length
+                ? `<p><strong>Completed Jobs:</strong></p><ul>${completedJobs.map(job => `<li>${job.filename}</li>`).join("")}</ul>`
+                : "<p>No completed jobs yet.</p>";
+        }
     } catch (error) {
         console.error("Error fetching queue status:", error);
-
-        // Handle error in fetching queue status
-        document.getElementById("currentJobDisplay").innerHTML = "<p>Error fetching queue status.</p>";
-        document.getElementById("queueList").innerHTML = "<p>Unable to load queue.</p>";
-        document.getElementById("completedJobsList").innerHTML = "<p>Unable to load completed jobs.</p>";
+        handleError(error, "queue status");
     }
 }
 
 export function getCurrentJob() {
-    return currentJob; // Provide a way for main.js to access the current job
+    return currentJob;
 }
 
 export async function reconnectToLogs() {
     try {
-        await fetchQueueStatus(); // Fetch queue status to update global currentJob
+        await fetchQueueStatus();
 
-        const currentJob = getCurrentJob(); // Access the updated currentJob
-
+        const currentJob = getCurrentJob();
         if (currentJob && currentJob.id) {
             console.log(`Reconnecting to logs for job ${currentJob.id}...`);
 
-            // Call the reconnect-logs endpoint
             const reconnectResponse = await fetch(`/reconnect-logs?jobId=${currentJob.id}`);
-            if (!reconnectResponse.ok) throw new Error('Failed to reconnect to logs.');
+            if (!reconnectResponse.ok) throw new Error(`Failed to reconnect to logs for job ${currentJob.id}.`);
 
-            // Start streaming logs again
-            fetchCurrentLogs(currentJob.id); // Ensure this function exists and is implemented
+            const reconnectData = await reconnectResponse.json();
+            console.log(reconnectData.message || "Reconnected successfully.");
+
+            fetchCurrentLogs(currentJob.id);
         } else {
             console.log('No current job to reconnect to.');
         }
     } catch (error) {
         console.error('Error reconnecting to logs:', error);
+        handleError(error, "log reconnection");
     }
 }
 
+function handleError(error, context) {
+    console.error(`Error in ${context}:`, error);
+
+    const currentJobDisplay = document.getElementById("currentJobDisplay");
+    if (currentJobDisplay) {
+        currentJobDisplay.innerHTML = `<p>Error fetching ${context}.</p>`;
+    }
+
+    const queueList = document.getElementById("queueList");
+    if (queueList) {
+        queueList.innerHTML = `<p>Unable to load ${context}.</p>`;
+    }
+
+    const completedJobsList = document.getElementById("completedJobsList");
+    if (completedJobsList) {
+        completedJobsList.innerHTML = `<p>Unable to load completed jobs.</p>`;
+    }
+}

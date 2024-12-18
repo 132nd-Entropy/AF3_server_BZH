@@ -5,30 +5,97 @@ const jobLogEmitters = {}; // Object to store per-job EventEmitters
 const jobLogs = {}; // Persistent storage for logs
 const docker = require('dockerode');
 const dockerClient = new docker();
+const path = require('path');
 
+/**
+ * Captures and streams Docker container logs to a log file.
+ * @param {string} jobId - Unique job identifier.
+ * @param {string} containerId - Docker container ID.
+ */
+function captureContainerLogs(jobId, containerId) {
+    const logFile = path.join(__dirname, '../docker-logs', `${jobId}.log`);
+    const logStream = spawn('docker', ['logs', '-f', containerId]);
+
+    console.log(`[Job ${jobId}] Capturing logs for container: ${containerId}`);
+
+    logStream.stdout.on('data', (data) => {
+        const log = data.toString();
+        console.log(`[Job ${jobId}] STDOUT: ${log}`);
+        fs.appendFileSync(logFile, log);
+    });
+
+    logStream.stderr.on('data', (data) => {
+        const log = data.toString();
+        console.error(`[Job ${jobId}] STDERR: ${log}`);
+        fs.appendFileSync(logFile, log);
+    });
+
+    logStream.on('close', (code) => {
+        console.log(`[Job ${jobId}] Log streaming exited with code: ${code}`);
+    });
+
+    logStream.on('error', (err) => {
+        console.error(`[Job ${jobId}] Error streaming logs: ${err.message}`);
+    });
+}
+
+/**
+ * Monitors the Docker container for completion.
+ * @param {string} jobId - Unique job identifier.
+ * @param {string} containerId - Docker container ID.
+ * @param {function} callback - Callback to handle job completion or errors.
+ */
+function monitorContainerCompletion(jobId, containerId, callback) {
+    console.log(`[Job ${jobId}] Monitoring container: ${containerId} for completion.`);
+    const interval = setInterval(() => {
+        dockerClient.getContainer(containerId).inspect((err, data) => {
+            if (err) {
+                console.error(`[Job ${jobId}] Error inspecting container: ${err.message}`);
+                clearInterval(interval);
+                callback(new Error(`[Job ${jobId}] Failed to monitor container: ${err.message}`));
+                return;
+            }
+
+            const isRunning = data.State.Running;
+            if (!isRunning) {
+                console.log(`[Job ${jobId}] Container has stopped.`);
+                clearInterval(interval);
+                callback(null); // Job is completed successfully
+            }
+        });
+    }, 2000); // Check every 2 seconds
+}
+
+/**
+ * Starts a Docker container.
+ * @param {string} jobId - Unique job identifier.
+ * @param {Object} jobConfig - Docker configuration object.
+ * @param {function} callback - Callback to handle job start errors or process ID.
+ */
 function startContainer(jobId, jobConfig, callback) {
     dockerClient.createContainer(jobConfig, (err, container) => {
         if (err) {
-            console.error(`Error creating container: ${err.message}`);
+            console.error(`[Job ${jobId}] Error creating container: ${err.message}`);
             return callback(err);
         }
 
         const processID = container.id;
-        console.log(`[Job ${jobId}] Docker container started with ID: ${processID}`);
+        console.log(`[Job ${jobId}] Docker container created with ID: ${processID}`);
 
         container.start((startErr) => {
             if (startErr) {
-                console.error(`Error starting container: ${startErr.message}`);
+                console.error(`[Job ${jobId}] Error starting container: ${startErr.message}`);
                 return callback(startErr);
             }
 
+            console.log(`[Job ${jobId}] Docker container started successfully.`);
             callback(null, processID); // Pass processID to the callback
         });
     });
 }
 
 /**
- * Run a Docker job.
+ * Runs a Docker job.
  * @param {string} jobId - Unique job identifier.
  * @param {string} filePath - Path to the JSON file for the job.
  * @param {function} callback - Callback to handle job completion or errors.
@@ -67,19 +134,17 @@ function runDockerJob(jobId, filePath, callback, onContainerStart) {
     console.log(`[Job ${jobId}] Starting Docker container with command: docker ${dockerCommand.join(' ')}`);
 
     const dockerProcess = spawn('docker', dockerCommand);
-
     let containerId = '';
 
     dockerProcess.stdout.on('data', (data) => {
         const log = data.toString().trim();
         console.log(`[Job ${jobId}] STDOUT: ${log}`);
-
-        // Capture the container ID from the first line of output
         if (!containerId) {
             containerId = log;
             console.log(`[Job ${jobId}] Docker container started with ID: ${containerId}`);
             if (typeof onContainerStart === 'function') {
-                onContainerStart(containerId); // Pass the container ID to the callback
+                onContainerStart(containerId);
+                captureContainerLogs(jobId, containerId); // Start capturing logs
             }
         }
     });
@@ -90,8 +155,14 @@ function runDockerJob(jobId, filePath, callback, onContainerStart) {
     });
 
     dockerProcess.on('close', (code) => {
-        console.log(`[Job ${jobId}] Docker process exited with code ${code}`);
-        callback(code === 0 ? null : new Error(`[Job ${jobId}] Docker process exited with code ${code}`));
+        if (code !== 0) {
+            console.error(`[Job ${jobId}] Docker process exited with code ${code}`);
+            callback(new Error(`[Job ${jobId}] Docker process exited with code ${code}`));
+            return;
+        }
+
+        console.log(`[Job ${jobId}] Monitoring container for completion: ${containerId}`);
+        monitorContainerCompletion(jobId, containerId, callback);
     });
 
     dockerProcess.on('error', (error) => {
@@ -101,28 +172,25 @@ function runDockerJob(jobId, filePath, callback, onContainerStart) {
 }
 
 /**
- * Get the EventEmitter for a job's logs.
+ * Gets the EventEmitter for a job's logs.
  * @param {string} jobId - The job ID.
  * @returns {EventEmitter|null} - The EventEmitter for the job logs or null if not found.
  */
 function getJobLogEmitter(jobId) {
     if (!jobLogEmitters[jobId]) {
-        const emitter = new EventEmitter();
-        jobLogEmitters[jobId] = emitter;
+        jobLogEmitters[jobId] = new EventEmitter();
     }
     return jobLogEmitters[jobId];
 }
 
 /**
- * Cleanup an emitter for a job.
+ * Cleans up the emitter for a job.
  * @param {string} jobId - The job ID.
  */
 function cleanupEmitter(jobId) {
     if (jobLogEmitters[jobId]) {
         console.log(`[Job ${jobId}] Cleaning up job emitter`);
         delete jobLogEmitters[jobId];
-    } else {
-        console.log(`[Job ${jobId}] No emitter found to clean up`);
     }
 }
 
@@ -131,4 +199,3 @@ module.exports = {
     getJobLogEmitter,
     cleanupEmitter,
 };
-
