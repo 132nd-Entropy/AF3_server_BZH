@@ -1,5 +1,5 @@
 import { fetchQueueStatus, getCurrentJob, reconnectToLogs } from './queueStatus.js';
-import { fetchCurrentLogs } from './logStreaming.js';
+//import { fetchCurrentLogs } from './logStreaming.js';
 import { addMolecule } from './moleculeManager.js';
 import { createJSONFile } from './jobSubmission.js';
 

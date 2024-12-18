@@ -3,6 +3,29 @@ const fs = require('fs');
 const EventEmitter = require('events');
 const jobLogEmitters = {}; // Object to store per-job EventEmitters
 const jobLogs = {}; // Persistent storage for logs
+const docker = require('dockerode');
+const dockerClient = new docker();
+
+function startContainer(jobId, jobConfig, callback) {
+    dockerClient.createContainer(jobConfig, (err, container) => {
+        if (err) {
+            console.error(`Error creating container: ${err.message}`);
+            return callback(err);
+        }
+
+        const processID = container.id;
+        console.log(`[Job ${jobId}] Docker container started with ID: ${processID}`);
+
+        container.start((startErr) => {
+            if (startErr) {
+                console.error(`Error starting container: ${startErr.message}`);
+                return callback(startErr);
+            }
+
+            callback(null, processID); // Pass processID to the callback
+        });
+    });
+}
 
 /**
  * Run a Docker job.

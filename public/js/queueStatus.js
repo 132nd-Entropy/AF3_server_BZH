@@ -1,5 +1,5 @@
 // js/queuestatus.js
-import { fetchCurrentLogs } from './logStreaming.js';
+import { startServerLogStreaming } from './logStreaming.js';
 
 let currentJob = null; // Declare currentJob globally in queuestatus.js
 

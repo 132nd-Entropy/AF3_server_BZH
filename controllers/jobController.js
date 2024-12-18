@@ -2,31 +2,36 @@ const queueController = require('./queueController');
 
 function createJob(req, res) {
     const { filename, content } = req.body;
+
     if (!filename || !content) {
-        return res.status(400).json({ error: 'Invalid job data.' });
+        return res.status(400).json({ error: 'Filename and content are required.' });
     }
-    const jobId = Date.now().toString();
+
+    const filePath = `/home/entropy/AF3_server_BZH/job_data/${filename}.json`;
+
+    // Validate filePath
+    if (!filePath.endsWith('.json')) {
+        return res.status(400).json({ error: 'File path must be a .json file.' });
+    }
+
     const job = {
-        id: jobId,
+        id: generateUniqueId(),
         filename,
         content,
         status: 'queued',
+        filePath, // Ensure this is added
     };
-    queueController.enqueueJob(job);
-    res.json({ message: 'Job queued successfully.', jobId });
-}
 
-function processJob(job) {
-    try {
-        // Placeholder for any job pre-processing logic if needed
-    } catch (error) {
-        console.error(`Failed to process job: ${job.id}. Error: ${error.message}`);
-        job.status = 'failed';
-        throw error;
-    }
+    // Save the JSON file
+    fs.writeFileSync(filePath, JSON.stringify(content, null, 2));
+
+    // Enqueue the job
+    queueController.enqueueJob(job);
+
+    res.json({ message: 'Job created and enqueued successfully.', jobId: job.id });
 }
 
 module.exports = {
     createJob,
-    processJob,
+
 };

@@ -1,0 +1,26 @@
+I1218 10:08:12.762072 135277240156160 folding_input.py:1044] Detected /home/entropy/AF3_server_BZH/job_data/asdfsdfsdfsd.json is an AlphaFold 3 JSON since the top-level is not a list.
+I1218 10:08:12.762072 135277240156160 folding_input.py:1044] Detected /home/entropy/AF3_server_BZH/job_data/asdfsdfsdfsd.json is an AlphaFold 3 JSON since the top-level is not a list.
+I1218 10:08:13.362969 135277240156160 xla_bridge.py:895] Unable to initialize backend 'rocm': module 'jaxlib.xla_extension' has no attribute 'GpuAllocatorConfig'
+I1218 10:08:13.362969 135277240156160 xla_bridge.py:895] Unable to initialize backend 'rocm': module 'jaxlib.xla_extension' has no attribute 'GpuAllocatorConfig'
+I1218 10:08:13.363960 135277240156160 xla_bridge.py:895] Unable to initialize backend 'tpu': INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+I1218 10:08:13.363960 135277240156160 xla_bridge.py:895] Unable to initialize backend 'tpu': INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+I1218 10:08:18.076173 135277240156160 pipeline.py:40] Getting protein MSAs for sequence sdfsdfsdfsdfsdfsdfsd
+I1218 10:08:18.076173 135277240156160 pipeline.py:40] Getting protein MSAs for sequence sdfsdfsdfsdfsdfsdfsd
+I1218 10:08:18.078592 135247446406720 jackhmmer.py:78] Query sequence: sdfsdfsdfsdfsdfsdfsd
+I1218 10:08:18.078592 135247446406720 jackhmmer.py:78] Query sequence: sdfsdfsdfsdfsdfsdfsd
+I1218 10:08:18.080277 135247438014016 jackhmmer.py:78] Query sequence: sdfsdfsdfsdfsdfsdfsd
+I1218 10:08:18.080277 135247438014016 jackhmmer.py:78] Query sequence: sdfsdfsdfsdfsdfsdfsd
+I1218 10:08:18.081214 135247446406720 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmpnovxy8xs/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmpnovxy8xs/query.fasta /opt/alphafold3_database/uniref90_2022_05.fa"
+I1218 10:08:18.081214 135247446406720 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmpnovxy8xs/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmpnovxy8xs/query.fasta /opt/alphafold3_database/uniref90_2022_05.fa"
+I1218 10:08:18.081463 135247429621312 jackhmmer.py:78] Query sequence: sdfsdfsdfsdfsdfsdfsd
+I1218 10:08:18.081463 135247429621312 jackhmmer.py:78] Query sequence: sdfsdfsdfsdfsdfsdfsd
+I1218 10:08:18.082631 135247421228608 jackhmmer.py:78] Query sequence: sdfsdfsdfsdfsdfsdfsd
+I1218 10:08:18.082955 135247438014016 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmpvj0w681r/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmpvj0w681r/query.fasta /opt/alphafold3_database/mgy_clusters_2022_05.fa"
+I1218 10:08:18.082631 135247421228608 jackhmmer.py:78] Query sequence: sdfsdfsdfsdfsdfsdfsd
+I1218 10:08:18.082955 135247438014016 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmpvj0w681r/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmpvj0w681r/query.fasta /opt/alphafold3_database/mgy_clusters_2022_05.fa"
+I1218 10:08:18.083137 135247429621312 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmpjhqxenew/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmpjhqxenew/query.fasta /opt/alphafold3_database/bfd-first_non_consensus_sequences.fasta"
+I1218 10:08:18.083137 135247429621312 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmpjhqxenew/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmpjhqxenew/query.fasta /opt/alphafold3_database/bfd-first_non_consensus_sequences.fasta"
+I1218 10:08:18.083870 135247421228608 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmppuv4_98c/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmppuv4_98c/query.fasta /opt/alphafold3_database/uniprot_all_2021_04.fa"
+I1218 10:08:18.083870 135247421228608 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmppuv4_98c/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmppuv4_98c/query.fasta /opt/alphafold3_database/uniprot_all_2021_04.fa"
+I1218 10:09:54.593758 135247429621312 subprocess_utils.py:97] Finished Jackhmmer in 96.510 seconds
+I1218 10:09:54.593758 135247429621312 subprocess_utils.py:97] Finished Jackhmmer in 96.510 seconds

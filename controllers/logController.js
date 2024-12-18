@@ -27,10 +27,6 @@ function streamServerLogs(req, res) {
 
     const logFile = path.join(logDir, `${jobId}.log`);
 
-    if (!fs.existsSync(logFile)) {
-        return res.status(404).json({ error: 'Log file not found for the specified job.' });
-    }
-
     console.log(`[Job ${jobId}] Streaming logs to frontend...`);
 
     res.writeHead(200, {
@@ -39,40 +35,41 @@ function streamServerLogs(req, res) {
         Connection: 'keep-alive',
     });
 
-    res.flushHeaders();
+    let lastSize = 0;
+    const interval = setInterval(() => {
+        fs.stat(logFile, (err, stats) => {
+            if (err) {
+                if (err.code === 'ENOENT') {
+                    console.log(`[Job ${jobId}] Log file not found. Retrying...`);
+                } else {
+                    console.error(`[Job ${jobId}] Error reading log file: ${err.message}`);
+                }
+                return;
+            }
 
-    // Stream new data as it is written
-    const readStream = fs.createReadStream(logFile, { encoding: 'utf8', start: fs.statSync(logFile).size });
+            if (stats.size > lastSize) {
+                const stream = fs.createReadStream(logFile, {
+                    start: lastSize,
+                    end: stats.size,
+                    encoding: 'utf8',
+                });
 
-    readStream.on('data', (chunk) => {
-        res.write(`data: ${chunk}\n\n`);
-    });
+                stream.on('data', (chunk) => {
+                    res.write(`data: ${chunk}\n\n`);
+                });
 
-    // Watch for additional updates
-    const fileWatcher = fs.watch(logFile, (eventType) => {
-        if (eventType === 'change') {
-            const updatedStream = fs.createReadStream(logFile, { encoding: 'utf8', start: fs.statSync(logFile).size });
-            updatedStream.on('data', (chunk) => {
-                res.write(`data: ${chunk}\n\n`);
-            });
-        }
-    });
+                lastSize = stats.size;
+            }
+        });
+    }, 1000);
 
-    // Cleanup on client disconnect
     req.on('close', () => {
-        console.log(`[Job ${jobId}] Client disconnected.`);
-        fileWatcher.close();
-        readStream.close();
-        res.end();
-    });
-
-    req.on('error', (err) => {
-        console.error(`[Job ${jobId}] Error in SSE connection: ${err.message}`);
-        fileWatcher.close();
-        readStream.close();
+        console.log(`[Job ${jobId}] Client disconnected. Stopping log stream.`);
+        clearInterval(interval);
         res.end();
     });
 }
+
 
 
 
@@ -81,7 +78,12 @@ function streamServerLogs(req, res) {
  * Log job completion.
  * @param {String} jobId - The ID of the completed job.
  */
-function logJobCompletion(jobId) {
+function logJobCompletion(jobId,processID) {
+    if (!processID) {
+        console.error('Error: processID is undefined');
+        return;
+    }
+
     const completionMessage = `Job ${jobId} completed successfully.`;
     console.log(completionMessage);
     console.log(`[DEBUG] Invoking tailDockerLogs for Job ${jobId} completion.`);
@@ -117,7 +119,7 @@ function tailDockerLogs(jobId, processID) {
     }
 
     console.log(`[Job ${jobId}] Container with ID ${processID} exists. Starting logs.`);
-    startLogStreaming();
+
     });
     const logFile = path.join(logDir, `${jobId}.log`);
 

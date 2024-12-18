@@ -2,6 +2,16 @@ const jobController = require('./jobController');
 const dockerService = require('../services/dockerService');
 const logController = require('./logController'); // Import logController
 const { tailDockerLogs } = logController; // Extract tailDockerLogs
+/*
+dockerService.startContainer(currentJob.id, jobConfig, (err, processID) => {
+    if (err) {
+        console.error(`Failed to start Docker container: ${err.message}`);
+        return;
+    }
+
+    // Log job completion with the correct processID
+    logController.logJobCompletion(currentJob.id, processID);
+});*/
 
 
 const jobQueue = [];
@@ -54,32 +64,33 @@ async function processQueue() {
     try {
         console.log(`[Job ${currentJob.id}] Starting Docker container`);
         dockerService.runDockerJob(
-            currentJob.id,
-            currentJob.filename,
-            (error) => {
-                // Handle Docker job completion
-                if (error) {
-                    currentJob.status = 'failed';
-                    logController.logJobFailure(currentJob.id, error);
-                    console.error(`Job failed: ${currentJob.id}. Error: ${error.message}`);
-                } else {
-                    currentJob.status = 'completed';
-                    logController.logJobCompletion(currentJob.id);
-                    console.log(`Job completed: ${currentJob.id}`);
-                }
+    currentJob.id,
+    currentJob.filename,
+    (error) => {
+        if (error) {
+            currentJob.status = 'failed';
+            logController.logJobFailure(currentJob.id, error);
+            console.error(`Job failed: ${currentJob.id}. Error: ${error.message}`);
+        } else {
+            currentJob.status = 'completed';
+            logController.logJobCompletion(currentJob.id, currentJob.containerId); // Use containerId from currentJob
+            console.log(`Job completed: ${currentJob.id}`);
+        }
 
-                // Update allJobs and reset processing
-                allJobs.set(currentJob.id, { ...currentJob });
-                isProcessing = false;
-                currentJob = null;
-                processQueue(); // Process the next job
-            },
-            (containerId) => {
-                // Handle Docker container start and begin log streaming
-                console.log(`[Job ${currentJob.id}] Docker container started with ID: ${containerId}`);
-                tailDockerLogs(currentJob.id, containerId); // Tail the Docker logs
-            }
-        );
+        // Update allJobs and reset processing
+        allJobs.set(currentJob.id, { ...currentJob });
+        isProcessing = false;
+        currentJob = null;
+        processQueue(); // Process the next job
+    },
+    (containerId) => {
+        // Handle Docker container start and begin log streaming
+        console.log(`[Job ${currentJob.id}] Docker container started with ID: ${containerId}`);
+        currentJob.containerId = containerId; // Track container ID in the current job
+        tailDockerLogs(currentJob.id, containerId); // Tail the Docker logs
+    }
+);
+
     } catch (error) {
         currentJob.status = 'failed';
         logController.logJobFailure(currentJob.id, error);
