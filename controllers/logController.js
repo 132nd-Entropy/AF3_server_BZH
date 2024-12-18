@@ -1,10 +1,23 @@
+const fs = require('fs');
+const path = require('path');
 const dockerService = require('../services/dockerService');
+const { spawn } = require('child_process');
+const { exec } = require('child_process');
+
+
+
+// Directory to store log files
+const logDir = path.join(__dirname, '../docker-logs');
+if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir, { recursive: true });
+}
 
 /**
- * Stream server logs to the client using Server-Sent Events (SSE).
+ * Stream logs from the generated log file to the client using Server-Sent Events (SSE).
  * @param {Object} req - Express request object.
  * @param {Object} res - Express response object.
  */
+
 function streamServerLogs(req, res) {
     const jobId = req.query.jobId;
 
@@ -12,12 +25,13 @@ function streamServerLogs(req, res) {
         return res.status(400).json({ error: 'Job ID is required' });
     }
 
-    const jobLogEmitter = dockerService.getJobLogEmitter(jobId);
-    if (!jobLogEmitter) {
-        return res.status(404).json({ error: 'Job not found or has no logs' });
+    const logFile = path.join(logDir, `${jobId}.log`);
+
+    if (!fs.existsSync(logFile)) {
+        return res.status(404).json({ error: 'Log file not found for the specified job.' });
     }
 
-    console.log(`[Job ${jobId}] Streaming logs...`);
+    console.log(`[Job ${jobId}] Streaming logs to frontend...`);
 
     res.writeHead(200, {
         'Content-Type': 'text/event-stream',
@@ -27,47 +41,41 @@ function streamServerLogs(req, res) {
 
     res.flushHeaders();
 
-    const sendLog = (log) => {
-        console.log(`[Job ${jobId}] Log sent: ${log}`);
-        res.write(`data: ${log}\n\n`);
-    };
+    // Stream new data as it is written
+    const readStream = fs.createReadStream(logFile, { encoding: 'utf8', start: fs.statSync(logFile).size });
 
-    jobLogEmitter.on('log', sendLog);
+    readStream.on('data', (chunk) => {
+        res.write(`data: ${chunk}\n\n`);
+    });
 
+    // Watch for additional updates
+    const fileWatcher = fs.watch(logFile, (eventType) => {
+        if (eventType === 'change') {
+            const updatedStream = fs.createReadStream(logFile, { encoding: 'utf8', start: fs.statSync(logFile).size });
+            updatedStream.on('data', (chunk) => {
+                res.write(`data: ${chunk}\n\n`);
+            });
+        }
+    });
+
+    // Cleanup on client disconnect
     req.on('close', () => {
-        console.log(`[Job ${jobId}] Connection closed`);
-        jobLogEmitter.removeListener('log', sendLog);
+        console.log(`[Job ${jobId}] Client disconnected.`);
+        fileWatcher.close();
+        readStream.close();
         res.end();
     });
 
     req.on('error', (err) => {
         console.error(`[Job ${jobId}] Error in SSE connection: ${err.message}`);
+        fileWatcher.close();
+        readStream.close();
         res.end();
     });
-
-    // Auto-cleanup in case the emitter becomes inactive
-    setTimeout(() => {
-        if (jobLogEmitter.listenerCount('log') === 0) {
-            console.log(`[Job ${jobId}] No active listeners; cleaning up`);
-            dockerService.cleanupEmitter(jobId);
-        }
-    }, 60000); // Clean up after 60 seconds
 }
 
-/**
- * Fetch logs for the current job when the frontend initializes.
- * @param {String} currentJobId - The ID of the currently processing job.
- */
-function fetchCurrentLogs(currentJobId) {
-    const jobLogEmitter = dockerService.getJobLogEmitter(currentJobId);
 
-    if (jobLogEmitter) {
-        console.log(`[Job ${currentJobId}] Fetching existing logs on reconnect`);
-        jobLogEmitter.emit('log', 'Reconnecting to logs...');
-    } else {
-        console.log(`[Job ${currentJobId}] No existing logs found for reconnection.`);
-    }
-}
+
 
 /**
  * Log job completion.
@@ -76,7 +84,10 @@ function fetchCurrentLogs(currentJobId) {
 function logJobCompletion(jobId) {
     const completionMessage = `Job ${jobId} completed successfully.`;
     console.log(completionMessage);
+    console.log(`[DEBUG] Invoking tailDockerLogs for Job ${jobId} completion.`);
+    tailDockerLogs(jobId, processID);
 }
+
 
 /**
  * Log job failure.
@@ -84,18 +95,87 @@ function logJobCompletion(jobId) {
  * @param {Error} error - The error that caused the failure.
  */
 function logJobFailure(jobId, error) {
-    console.error({
+    const errorMessage = {
         message: `Job ${jobId} failed`,
         error: error.message,
         stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
+    };
+    console.error(errorMessage);
+    tailDockerLogs(jobId, JSON.stringify(errorMessage, null, 2)); // Save error message to log file
+}
+
+/**
+ * Append logs to a file in the docker-logs directory.
+ * @param {String} jobId - The ID of the job.
+ * @param {String} log - The log content to save.
+ */
+function tailDockerLogs(jobId, processID) {
+    exec(`docker inspect ${processID}`, (err) => {
+    if (err) {
+        console.error(`[Job ${jobId}] Container with ID ${processID} does not exist.`);
+        return;
+    }
+
+    console.log(`[Job ${jobId}] Container with ID ${processID} exists. Starting logs.`);
+    startLogStreaming();
+    });
+    const logFile = path.join(logDir, `${jobId}.log`);
+
+    console.log(`[Job ${jobId}] Starting to tail Docker logs for process ID ${processID}.`);
+
+    // Validate container existence
+    exec(`docker inspect ${processID}`, (err) => {
+        if (err) {
+            console.error(`[Job ${jobId}] Container with ID ${processID} does not exist.`);
+            fs.appendFile(logFile, `Error: Container with ID ${processID} does not exist.\n`, (err) => {
+                if (err) console.error(`[Job ${jobId}] Failed to write error to log file: ${err.message}`);
+            });
+            return;
+        }
+
+        console.log(`[Job ${jobId}] Container with ID ${processID} exists. Starting log streaming.`);
+
+        // Spawn the docker logs command
+        const dockerLogs = spawn('docker', ['logs', '-f', processID]);
+
+        dockerLogs.stdout.on('data', (data) => {
+            const logEntry = data.toString();
+            fs.appendFile(logFile, logEntry, (err) => {
+                if (err) {
+                    console.error(`[Job ${jobId}] Failed to write log to file: ${err.message}`);
+                }
+            });
+        });
+
+        dockerLogs.stderr.on('data', (data) => {
+            const logEntry = data.toString();
+            fs.appendFile(logFile, logEntry, (err) => {
+                if (err) {
+                    console.error(`[Job ${jobId}] Failed to write error log to file: ${err.message}`);
+                }
+            });
+        });
+
+        dockerLogs.on('close', (code) => {
+            if (code === 0) {
+                console.log(`[Job ${jobId}] Docker log streaming completed.`);
+            } else {
+                console.error(`[Job ${jobId}] Docker log streaming process exited with code ${code}.`);
+            }
+        });
+
+        dockerLogs.on('error', (err) => {
+            console.error(`[Job ${jobId}] Error while spawning Docker logs: ${err.message}`);
+        });
     });
 }
 
+
 module.exports = {
     streamServerLogs,
-    fetchCurrentLogs, // Exported for frontend initialization
     logJobCompletion,
     logJobFailure,
+    tailDockerLogs,
 };
 
 console.log('logController.js loaded successfully');

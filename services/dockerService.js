@@ -9,8 +9,9 @@ const jobLogs = {}; // Persistent storage for logs
  * @param {string} jobId - Unique job identifier.
  * @param {string} filePath - Path to the JSON file for the job.
  * @param {function} callback - Callback to handle job completion or errors.
+ * @param {function} onContainerStart - Callback for when the container starts, with the container ID.
  */
-function runDockerJob(jobId, filePath, callback) {
+function runDockerJob(jobId, filePath, callback, onContainerStart) {
     const fullPath = filePath.endsWith('.json')
         ? filePath
         : `/home/entropy/AF3_server_BZH/job_data/${filePath}.json`;
@@ -25,6 +26,7 @@ function runDockerJob(jobId, filePath, callback) {
 
     const dockerCommand = [
         'run',
+        '-d', // Detached mode to return the container ID
         '-i',
         '-v', '/home/entropy/output_alphafold3:/home/entropy/output_alphafold3',
         '-v', '/opt/alphafold3_database:/opt/alphafold3_database',
@@ -42,36 +44,35 @@ function runDockerJob(jobId, filePath, callback) {
     console.log(`[Job ${jobId}] Starting Docker container with command: docker ${dockerCommand.join(' ')}`);
 
     const dockerProcess = spawn('docker', dockerCommand);
-    const jobLogEmitter = new EventEmitter();
-    jobLogEmitters[jobId] = jobLogEmitter;
+
+    let containerId = '';
 
     dockerProcess.stdout.on('data', (data) => {
-        const log = data.toString();
+        const log = data.toString().trim();
         console.log(`[Job ${jobId}] STDOUT: ${log}`);
-        jobLogEmitter.emit('log', log);
+
+        // Capture the container ID from the first line of output
+        if (!containerId) {
+            containerId = log;
+            console.log(`[Job ${jobId}] Docker container started with ID: ${containerId}`);
+            if (typeof onContainerStart === 'function') {
+                onContainerStart(containerId); // Pass the container ID to the callback
+            }
+        }
     });
 
     dockerProcess.stderr.on('data', (data) => {
         const log = data.toString();
         console.error(`[Job ${jobId}] STDERR: ${log}`);
-        jobLogEmitter.emit('log', log);
     });
 
     dockerProcess.on('close', (code) => {
         console.log(`[Job ${jobId}] Docker process exited with code ${code}`);
-        if (jobLogEmitters[jobId]) {
-            jobLogEmitters[jobId].emit('log', `Docker process exited with code ${code}`);
-            jobLogEmitters[jobId].emit('close', code);
-        }
-        delete jobLogEmitters[jobId];
         callback(code === 0 ? null : new Error(`[Job ${jobId}] Docker process exited with code ${code}`));
     });
 
     dockerProcess.on('error', (error) => {
         console.error(`[Job ${jobId}] Error starting Docker process: ${error.message}`);
-        if (jobLogEmitters[jobId]) {
-            jobLogEmitters[jobId].emit('log', `Error: ${error.message}`);
-        }
         callback(new Error(`[Job ${jobId}] ${error.message}`));
     });
 }

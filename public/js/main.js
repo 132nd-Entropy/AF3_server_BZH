@@ -1,4 +1,7 @@
-// js/main.js
+import { fetchQueueStatus, getCurrentJob, reconnectToLogs } from './queueStatus.js';
+import { fetchCurrentLogs } from './logStreaming.js';
+import { addMolecule } from './moleculeManager.js';
+import { createJSONFile } from './jobSubmission.js';
 
 document.addEventListener("DOMContentLoaded", () => {
     addMolecule(); // Adds the initial molecule block dynamically
@@ -17,20 +20,15 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error('Element "startPredictionButton" not found.');
     }
 
-    fetchQueueStatus();
+    // Fetch queue status and initialize logs
+    fetchQueueStatus().then(() => {
+        const currentJob = getCurrentJob();
+        if (currentJob && currentJob.id) {
+            fetchCurrentLogs(currentJob.id); // Start streaming logs
+        }
+    });
+
+    reconnectToLogs(); // Reconnect to logs on page load
+
     setInterval(fetchQueueStatus, 5000); // Poll every 5 seconds
 });
-
-
-
-if (currentJob && currentJob.id) {
-    fetch(`/get-logs?jobId=${currentJob.id}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.logs) {
-                const logsDisplay = document.getElementById('logsDisplay');
-                logsDisplay.value = data.logs.join('\n');
-            }
-        })
-        .catch(error => console.error('Error fetching logs:', error));
-}

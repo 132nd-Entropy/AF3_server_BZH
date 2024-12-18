@@ -1,6 +1,8 @@
 // js/jobSubmission.js
+import { startServerLogStreaming } from './logStreaming.js';
+import { fetchQueueStatus } from './queueStatus.js';
 
-async function createJSONFile() {
+export async function createJSONFile() {
     const projectName = document.getElementById("projectName").value.trim();
     if (!projectName) {
         alert("Please enter a Prediction Name.");

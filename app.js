@@ -2,7 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const express = require('express');
 const jsonGenerator = require('./controllers/jsonGenerator');
 const queueController = require('./controllers/queueController');
-const logController = require('./controllers/logController.js');
+const logController = require('./controllers/logController');
 
 const app = express();
 const path = require('path');
@@ -13,6 +13,7 @@ app.use(express.json());
 
 // Serve frontend files if needed
 app.use(express.static('public'));
+app.get('/stream-logs', logController.streamServerLogs); // Attach the endpoint
 
 
 // Route for streaming server logs
@@ -92,7 +93,7 @@ app.post('/create-json', async (req, res) => {
 // Route to check job queue status
 app.get('/queue-status', (req, res) => {
     const status = queueController.getQueueStatus();
-    console.log('Queue Status Response:', JSON.stringify(status, null, 2)); // Debugging log
+    //console.log('Queue Status Response:', JSON.stringify(status, null, 2)); // Debugging log
     res.json(status);
 });
 

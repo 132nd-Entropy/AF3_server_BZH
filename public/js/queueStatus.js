@@ -1,4 +1,9 @@
-async function fetchQueueStatus() {
+// js/queuestatus.js
+import { fetchCurrentLogs } from './logStreaming.js';
+
+let currentJob = null; // Declare currentJob globally in queuestatus.js
+
+export async function fetchQueueStatus() {
     try {
         const response = await fetch("/queue-status");
         if (!response.ok) throw new Error(`Failed to fetch queue status: ${response.statusText}`);
@@ -6,14 +11,16 @@ async function fetchQueueStatus() {
         const data = await response.json();
         console.log('Queue status data:', data);
 
-        // Extract current processing job, queued jobs, and completed jobs
-        const processingJob = data.jobs.find(job => job.status === 'processing');
+        // Assign the currently processing job to global currentJob
+        currentJob = data.jobs.find(job => job.status === 'processing');
+
+        // Extract queued and completed jobs
         const queue = data.jobs.filter(job => job.status === 'queued');
         const completedJobs = data.jobs.filter(job => job.status === 'completed');
 
         // Update the currently processing job display
-        document.getElementById("currentJobDisplay").innerHTML = processingJob
-            ? `<p>Currently Processing: <strong>${processingJob.filename}</strong></p>`
+        document.getElementById("currentJobDisplay").innerHTML = currentJob
+            ? `<p>Currently Processing: <strong>${currentJob.filename}</strong></p>`
             : "<p>No job is currently processing.</p>";
 
         // Update the pending jobs list
@@ -34,12 +41,16 @@ async function fetchQueueStatus() {
         document.getElementById("completedJobsList").innerHTML = "<p>Unable to load completed jobs.</p>";
     }
 }
-async function reconnectToLogs() {
-    try {
-        const response = await fetch('/queue-status');
-        if (!response.ok) throw new Error(`Failed to fetch queue status: ${response.statusText}`);
 
-        const { currentJob } = await response.json();
+export function getCurrentJob() {
+    return currentJob; // Provide a way for main.js to access the current job
+}
+
+export async function reconnectToLogs() {
+    try {
+        await fetchQueueStatus(); // Fetch queue status to update global currentJob
+
+        const currentJob = getCurrentJob(); // Access the updated currentJob
 
         if (currentJob && currentJob.id) {
             console.log(`Reconnecting to logs for job ${currentJob.id}...`);
@@ -49,7 +60,7 @@ async function reconnectToLogs() {
             if (!reconnectResponse.ok) throw new Error('Failed to reconnect to logs.');
 
             // Start streaming logs again
-            fetchCurrentLogs(currentJob.id);
+            fetchCurrentLogs(currentJob.id); // Ensure this function exists and is implemented
         } else {
             console.log('No current job to reconnect to.');
         }
@@ -57,7 +68,4 @@ async function reconnectToLogs() {
         console.error('Error reconnecting to logs:', error);
     }
 }
-
-// Call this function on page load
-document.addEventListener('DOMContentLoaded', reconnectToLogs);
 

@@ -1,6 +1,8 @@
 const jobController = require('./jobController');
-const logController = require('./logController');
 const dockerService = require('../services/dockerService');
+const logController = require('./logController'); // Import logController
+const { tailDockerLogs } = logController; // Extract tailDockerLogs
+
 
 const jobQueue = [];
 let isProcessing = false;
@@ -19,7 +21,7 @@ function enqueueJob(job) {
         jobQueue.push(job);
         allJobs.set(job.id, job); // Add to allJobs for status tracking
         console.log(`Job enqueued: ${job.id} - ${job.filename}`);
-        debugState(); // Debugging current state
+        //debugState(); // Debugging current state
         processQueue(); // Start processing the queue
     } catch (error) {
         console.error(`Failed to enqueue job: ${job.id}. Error: ${error.message}`);
@@ -45,25 +47,39 @@ async function processQueue() {
     allJobs.set(currentJob.id, { ...currentJob });
     console.log(`Processing job: ${currentJob.id}`);
 
+    // NEW: Write initial log when the job starts
+    const startMessage = `Job ${currentJob.id} started processing.`;
+    console.log(startMessage);
+
     try {
         console.log(`[Job ${currentJob.id}] Starting Docker container`);
-        dockerService.runDockerJob(currentJob.id, currentJob.filename, (error) => {
-            if (error) {
-                currentJob.status = 'failed';
-                logController.logJobFailure(currentJob.id, error);
-                console.error(`Job failed: ${currentJob.id}. Error: ${error.message}`);
-            } else {
-                currentJob.status = 'completed';
-                logController.logJobCompletion(currentJob.id);
-                console.log(`Job completed: ${currentJob.id}`);
-            }
+        dockerService.runDockerJob(
+            currentJob.id,
+            currentJob.filename,
+            (error) => {
+                // Handle Docker job completion
+                if (error) {
+                    currentJob.status = 'failed';
+                    logController.logJobFailure(currentJob.id, error);
+                    console.error(`Job failed: ${currentJob.id}. Error: ${error.message}`);
+                } else {
+                    currentJob.status = 'completed';
+                    logController.logJobCompletion(currentJob.id);
+                    console.log(`Job completed: ${currentJob.id}`);
+                }
 
-            // Update allJobs and reset processing
-            allJobs.set(currentJob.id, { ...currentJob });
-            isProcessing = false;
-            currentJob = null;
-            processQueue(); // Process the next job
-        });
+                // Update allJobs and reset processing
+                allJobs.set(currentJob.id, { ...currentJob });
+                isProcessing = false;
+                currentJob = null;
+                processQueue(); // Process the next job
+            },
+            (containerId) => {
+                // Handle Docker container start and begin log streaming
+                console.log(`[Job ${currentJob.id}] Docker container started with ID: ${containerId}`);
+                tailDockerLogs(currentJob.id, containerId); // Tail the Docker logs
+            }
+        );
     } catch (error) {
         currentJob.status = 'failed';
         logController.logJobFailure(currentJob.id, error);
@@ -80,6 +96,7 @@ async function processQueue() {
 
 
 
+
 /**
  * Get the current status of the queue and jobs.
  */
@@ -90,14 +107,7 @@ function getQueueStatus() {
         ...Array.from(allJobs.values()).filter((job) => job.status === 'completed' || job.status === 'failed'),
     ];
 
-    console.log('--- Debugging /queue-status ---');
-    console.log('isProcessing:', isProcessing);
-    console.log('currentJob:', currentJob);
-    console.log('jobQueue:', JSON.stringify(jobQueue, null, 2));
-    console.log('allJobs:', JSON.stringify(Array.from(allJobs.values()), null, 2));
-    console.log('jobs:', JSON.stringify(jobs, null, 2));
-
-    return {
+      return {
         isProcessing,
         currentJob,
         queue: jobQueue.map((job, index) => ({
@@ -124,5 +134,5 @@ module.exports = {
     enqueueJob,
     processQueue,
     getQueueStatus, // Export queue status for use in endpoints
-    debugState,
+    //debugState,
 };

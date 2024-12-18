@@ -1,8 +1,7 @@
-// js/moleculeManager.js
-
 let moleculeCount = 0;
 
-function addMolecule() {
+// Export the addMolecule function
+export function addMolecule() {
     const moleculeId = Date.now();
     moleculeCount++;
     const container = document.getElementById("moleculeContainer");
@@ -32,14 +31,17 @@ function addMolecule() {
     container.appendChild(newMolecule);
 }
 
-function removeMolecule(moleculeId) {
+// Export removeMolecule and attach to the window for global access
+export function removeMolecule(moleculeId) {
     const moleculeBlock = document.getElementById(`molecule${moleculeId}Block`);
     if (moleculeBlock) {
         moleculeBlock.remove();
     }
 }
+window.removeMolecule = removeMolecule; // Attach globally for inline HTML use
 
-function handleMoleculeTypeChange(moleculeId) {
+// Export handleMoleculeTypeChange and attach to the window
+export function handleMoleculeTypeChange(moleculeId) {
     const moleculeType = document.getElementById(`molecule${moleculeId}`).value;
     const sequenceField = document.getElementById(`sequenceField${moleculeId}`);
     const sequenceLabel = sequenceField.querySelector(`label[for="sequence${moleculeId}"]`);
@@ -85,7 +87,10 @@ function handleMoleculeTypeChange(moleculeId) {
         sequenceField.style.display = "none";
     }
 }
-function validateSequence(moleculeId) {
+window.handleMoleculeTypeChange = handleMoleculeTypeChange; // Attach globally for inline HTML use
+
+// Export validateSequence and attach to the window
+export function validateSequence(moleculeId) {
     const moleculeType = document.getElementById(`molecule${moleculeId}`).value.toLowerCase();
     const input = document.getElementById(`sequence${moleculeId}`).value.trim();
     const errorField = document.getElementById(`error${moleculeId}`);
@@ -107,11 +112,4 @@ function validateSequence(moleculeId) {
         errorField.innerText = "";
     }
 }
-
-
-// Function to validate protein sequences
-function validateProteinSequence(sequence) {
-    // Regular expression matching valid amino acid single-letter codes
-    const validAminoAcids = /^[ACDEFGHIKLMNPQRSTVWY]+$/i;
-    return validAminoAcids.test(sequence);
-}
+window.validateSequence = validateSequence; // Attach globally for inline HTML use
