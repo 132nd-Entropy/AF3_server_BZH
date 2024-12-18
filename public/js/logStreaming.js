@@ -1,36 +1,29 @@
-let eventSource = null;
+let eventSource = null; // Keep track of the current log stream
+let currentJobId = null; // Track the currently streaming job ID
 
+/**
+ * Fetch and display logs for a job in the frontend.
+ * @param {string} jobId - The ID of the job to fetch logs for.
+ */
 export function fetchCurrentLogs(jobId) {
     if (!jobId) {
         console.error("No jobId provided for fetching logs.");
         return;
     }
 
-    const logsDisplay = document.getElementById("logsDisplay");
-    if (!logsDisplay) {
-        console.error("Logs display element not found.");
-        return;
+    if (eventSource && currentJobId === jobId) {
+        console.log(`Already connected to log stream for Job ${jobId}.`);
+        return; // No need to reconnect if the job ID is the same
     }
 
-    const eventSource = new EventSource(`/stream-logs?jobId=${jobId}`);
-
-    eventSource.onmessage = (event) => {
-        logsDisplay.value += event.data + '\n';
-        logsDisplay.scrollTop = logsDisplay.scrollHeight;
-    };
-
-    eventSource.onerror = () => {
-        console.error("Error in log stream.");
-        logsDisplay.value += "\n[Log streaming disconnected.]\n";
-        eventSource.close();
-    };
-}
-
-
-export function startServerLogStreaming(jobId) {
     if (eventSource) {
-        eventSource.close(); // Close any existing stream
+        console.log("Stopping previous log stream...");
+        eventSource.close(); // Close the previous stream
+        eventSource = null;
     }
+
+    console.log(`Connecting to log stream for Job ${jobId}...`);
+    currentJobId = jobId; // Update the currently streaming job ID
 
     const logsDisplay = document.getElementById("logsDisplay");
     if (!logsDisplay) {
@@ -38,38 +31,33 @@ export function startServerLogStreaming(jobId) {
         return;
     }
 
+    // Clear previous logs
+    logsDisplay.value = `[Connected to log stream for Job ${jobId}]\n`;
+
+    // Start a new EventSource for the given job
     eventSource = new EventSource(`/stream-logs?jobId=${jobId}`);
 
     eventSource.onmessage = (event) => {
         const logLine = event.data;
-
-        if (logLine === '[END OF LOG]') {
-            logsDisplay.value += "\n[Log streaming completed.]\n";
-            logsDisplay.scrollTop = logsDisplay.scrollHeight;
-            eventSource.close();
-            eventSource = null;
-            return;
-        }
-
         logsDisplay.value += logLine + "\n";
-
-        // Scroll to the bottom of the logs
         logsDisplay.scrollTop = logsDisplay.scrollHeight;
     };
 
-    eventSource.onerror = (err) => {
-        console.error("Error receiving server logs:", err);
-        logsDisplay.value += "\n[Log stream disconnected.]\n";
+    eventSource.onerror = () => {
+        console.error("Error receiving server logs. Reconnecting in 5 seconds...");
+        logsDisplay.value += "\n[Log stream disconnected. Attempting to reconnect...]\n";
+        eventSource.close();
+        eventSource = null;
+
+        // Retry the connection after 5 seconds
+        setTimeout(() => fetchCurrentLogs(jobId), 5000);
+    };
+
+    // Ensure the connection is closed when the page is unloaded
+    window.addEventListener("beforeunload", () => {
         if (eventSource) {
             eventSource.close();
             eventSource = null;
         }
-    };
-
-    window.addEventListener("beforeunload", () => {
-        if (eventSource) {
-            eventSource.close();
-        }
     });
 }
-

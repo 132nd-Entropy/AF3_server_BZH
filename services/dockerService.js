@@ -13,21 +13,34 @@ const path = require('path');
  * @param {string} containerId - Docker container ID.
  */
 function captureContainerLogs(jobId, containerId) {
-    const logFile = path.join(__dirname, '../docker-logs', `${jobId}.log`);
-    const logStream = spawn('docker', ['logs', '-f', containerId]);
+    const logDir = path.join(__dirname, '../docker-logs');
+    if (!fs.existsSync(logDir)) {
+        fs.mkdirSync(logDir, { recursive: true });
+    }
 
+    const logFile = path.join(logDir, `${jobId}.log`);
     console.log(`[Job ${jobId}] Capturing logs for container: ${containerId}`);
+
+    const logStream = spawn('docker', ['logs', '-f', containerId]);
 
     logStream.stdout.on('data', (data) => {
         const log = data.toString();
         console.log(`[Job ${jobId}] STDOUT: ${log}`);
-        fs.appendFileSync(logFile, log);
+        try {
+            fs.appendFileSync(logFile, log);
+        } catch (err) {
+            console.error(`[Job ${jobId}] Error writing to log file: ${err.message}`);
+        }
     });
 
     logStream.stderr.on('data', (data) => {
         const log = data.toString();
         console.error(`[Job ${jobId}] STDERR: ${log}`);
-        fs.appendFileSync(logFile, log);
+        try {
+            fs.appendFileSync(logFile, log);
+        } catch (err) {
+            console.error(`[Job ${jobId}] Error writing to log file: ${err.message}`);
+        }
     });
 
     logStream.on('close', (code) => {
@@ -38,6 +51,7 @@ function captureContainerLogs(jobId, containerId) {
         console.error(`[Job ${jobId}] Error streaming logs: ${err.message}`);
     });
 }
+
 
 /**
  * Monitors the Docker container for completion.
@@ -131,38 +145,33 @@ function runDockerJob(jobId, filePath, callback, onContainerStart) {
         '--output_dir=/home/entropy/output_alphafold3',
     ];
 
-    console.log(`[Job ${jobId}] Starting Docker container with command: docker ${dockerCommand.join(' ')}`);
-
     const dockerProcess = spawn('docker', dockerCommand);
     let containerId = '';
 
     dockerProcess.stdout.on('data', (data) => {
         const log = data.toString().trim();
         console.log(`[Job ${jobId}] STDOUT: ${log}`);
+
         if (!containerId) {
-            containerId = log;
+            containerId = log; // Capture container ID
             console.log(`[Job ${jobId}] Docker container started with ID: ${containerId}`);
+            captureContainerLogs(jobId, containerId); // Start capturing logs
             if (typeof onContainerStart === 'function') {
                 onContainerStart(containerId);
-                captureContainerLogs(jobId, containerId); // Start capturing logs
             }
         }
     });
 
     dockerProcess.stderr.on('data', (data) => {
-        const log = data.toString();
-        console.error(`[Job ${jobId}] STDERR: ${log}`);
+        console.error(`[Job ${jobId}] STDERR: ${data.toString()}`);
     });
 
     dockerProcess.on('close', (code) => {
         if (code !== 0) {
-            console.error(`[Job ${jobId}] Docker process exited with code ${code}`);
-            callback(new Error(`[Job ${jobId}] Docker process exited with code ${code}`));
+            callback(new Error(`[Job ${jobId}] Docker exited with code ${code}`));
             return;
         }
-
-        console.log(`[Job ${jobId}] Monitoring container for completion: ${containerId}`);
-        monitorContainerCompletion(jobId, containerId, callback);
+        monitorContainerCompletion(jobId, containerId, callback); // Monitor container completion
     });
 
     dockerProcess.on('error', (error) => {
@@ -170,6 +179,7 @@ function runDockerJob(jobId, filePath, callback, onContainerStart) {
         callback(new Error(`[Job ${jobId}] ${error.message}`));
     });
 }
+
 
 /**
  * Gets the EventEmitter for a job's logs.

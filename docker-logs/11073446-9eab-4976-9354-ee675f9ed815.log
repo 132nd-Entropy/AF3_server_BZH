@@ -1,0 +1,12 @@
+I1218 12:05:48.629908 137240511705088 folding_input.py:1044] Detected /home/entropy/AF3_server_BZH/job_data/asdfasasdfasfasfds.json is an AlphaFold 3 JSON since the top-level is not a list.
+I1218 12:05:49.239537 137240511705088 xla_bridge.py:895] Unable to initialize backend 'rocm': module 'jaxlib.xla_extension' has no attribute 'GpuAllocatorConfig'
+I1218 12:05:49.240841 137240511705088 xla_bridge.py:895] Unable to initialize backend 'tpu': INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+I1218 12:05:54.941857 137240511705088 pipeline.py:40] Getting protein MSAs for sequence afsdfdsfdaafafdasfsdafadsfafadsasdfasfasd
+I1218 12:05:54.943584 137210582005312 jackhmmer.py:78] Query sequence: afsdfdsfdaafafdasfsdafadsfafadsasdfasfasd
+I1218 12:05:54.944504 137210573612608 jackhmmer.py:78] Query sequence: afsdfdsfdaafafdasfsdafadsfafadsasdfasfasd
+I1218 12:05:54.945762 137210573612608 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmpeybmz1k3/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmpeybmz1k3/query.fasta /opt/alphafold3_database/mgy_clusters_2022_05.fa"
+I1218 12:05:54.945979 137210565219904 jackhmmer.py:78] Query sequence: afsdfdsfdaafafdasfsdafadsfafadsasdfasfasd
+I1218 12:05:54.946293 137210582005312 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmpkvnkxs8v/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmpkvnkxs8v/query.fasta /opt/alphafold3_database/uniref90_2022_05.fa"
+I1218 12:05:54.946934 137210556827200 jackhmmer.py:78] Query sequence: afsdfdsfdaafafdasfsdafadsfafadsasdfasfasd
+I1218 12:05:54.947263 137210565219904 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmp452aa5v3/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmp452aa5v3/query.fasta /opt/alphafold3_database/bfd-first_non_consensus_sequences.fasta"
+I1218 12:05:54.947611 137210556827200 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmp32bmv3if/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmp32bmv3if/query.fasta /opt/alphafold3_database/uniprot_all_2021_04.fa"

@@ -12,3 +12,57 @@ I1218 11:52:18.828333 137590409782848 subprocess_utils.py:68] Launching subproce
 I1218 11:52:18.829072 137590401390144 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmphdfa15x0/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmphdfa15x0/query.fasta /opt/alphafold3_database/uniprot_all_2021_04.fa"
 I1218 11:53:43.825913 137590409782848 subprocess_utils.py:97] Finished Jackhmmer in 84.997 seconds
 I1218 11:58:24.104382 137590569166400 subprocess_utils.py:97] Finished Jackhmmer in 365.277 seconds
+I1218 12:03:23.504635 137590401390144 subprocess_utils.py:97] Finished Jackhmmer in 664.675 seconds
+I1218 12:05:44.118426 137590418175552 subprocess_utils.py:97] Finished Jackhmmer in 805.290 seconds
+Traceback (most recent call last):
+  File "/app/alphafold/run_alphafold.py", line 678, in <module>
+Running AlphaFold 3. Please note that standard AlphaFold 3 model parameters are
+only available under terms of use provided at
+https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_USE.md.
+If you do not agree to these terms and are using AlphaFold 3 derived model
+parameters, cancel execution of AlphaFold 3 inference with CTRL-C, and do not
+use the model parameters.
+Found local devices: [CudaDevice(id=0), CudaDevice(id=1), CudaDevice(id=2)]
+Building model from scratch...
+Processing 1 fold inputs.
+Processing fold input asdfasfasfds
+Checking we can load the model parameters...
+Running data pipeline...
+Processing chain A
+    app.run(main)
+  File "/alphafold3_venv/lib/python3.11/site-packages/absl/app.py", line 308, in run
+    _run_main(main, args)
+  File "/alphafold3_venv/lib/python3.11/site-packages/absl/app.py", line 254, in _run_main
+    sys.exit(main(argv))
+             ^^^^^^^^^^
+  File "/app/alphafold/run_alphafold.py", line 663, in main
+    process_fold_input(
+  File "/app/alphafold/run_alphafold.py", line 529, in process_fold_input
+    fold_input = pipeline.DataPipeline(data_pipeline_config).process(fold_input)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/alphafold3_venv/lib/python3.11/site-packages/alphafold3/data/pipeline.py", line 462, in process
+    processed_chains.append(self.process_protein_chain(chain))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/alphafold3_venv/lib/python3.11/site-packages/alphafold3/data/pipeline.py", line 411, in process_protein_chain
+    unpaired_msa, paired_msa, template_hits = _get_protein_msa_and_templates(
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/alphafold3_venv/lib/python3.11/site-packages/alphafold3/data/pipeline.py", line 69, in _get_protein_msa_and_templates
+    uniref90_msa = uniref90_msa_future.result()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/usr/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/alphafold3_venv/lib/python3.11/site-packages/alphafold3/data/msa.py", line 337, in get_msa
+    return Msa.from_a3m(
+           ^^^^^^^^^^^^^
+  File "/alphafold3_venv/lib/python3.11/site-packages/alphafold3/data/msa.py", line 220, in from_a3m
+    return cls(
+           ^^^^
+  File "/alphafold3_venv/lib/python3.11/site-packages/alphafold3/data/msa.py", line 108, in __init__
+    raise ValueError(
+ValueError: First MSA sequence AFSDFDSFDAAFAFDASFSDAFADSFAFADS is not the query_sequence='afsdfdsfdaafafdasfsdafadsfafads'
