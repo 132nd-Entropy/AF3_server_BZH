@@ -1,0 +1,68 @@
+I1218 10:28:33.141276 125147643998208 folding_input.py:1044] Detected /home/entropy/AF3_server_BZH/job_data/DSAFAS.json is an AlphaFold 3 JSON since the top-level is not a list.
+I1218 10:28:33.735821 125147643998208 xla_bridge.py:895] Unable to initialize backend 'rocm': module 'jaxlib.xla_extension' has no attribute 'GpuAllocatorConfig'
+I1218 10:28:33.736932 125147643998208 xla_bridge.py:895] Unable to initialize backend 'tpu': INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+I1218 10:28:37.811819 125147643998208 pipeline.py:40] Getting protein MSAs for sequence sadaDSAFASFA
+I1218 10:28:37.813704 125117858309696 jackhmmer.py:78] Query sequence: sadaDSAFASFA
+I1218 10:28:37.814831 125117849916992 jackhmmer.py:78] Query sequence: sadaDSAFASFA
+I1218 10:28:37.815290 125117698930240 jackhmmer.py:78] Query sequence: sadaDSAFASFA
+I1218 10:28:37.816105 125117690537536 jackhmmer.py:78] Query sequence: sadaDSAFASFA
+I1218 10:28:37.816612 125117849916992 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmp5o4z5wqp/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmp5o4z5wqp/query.fasta /opt/alphafold3_database/mgy_clusters_2022_05.fa"
+I1218 10:28:37.817180 125117698930240 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmpof382f7w/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmpof382f7w/query.fasta /opt/alphafold3_database/bfd-first_non_consensus_sequences.fasta"
+I1218 10:28:37.817322 125117858309696 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmpsp4whrda/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmpsp4whrda/query.fasta /opt/alphafold3_database/uniref90_2022_05.fa"
+I1218 10:28:37.817611 125117690537536 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmphivwawa2/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmphivwawa2/query.fasta /opt/alphafold3_database/uniprot_all_2021_04.fa"
+I1218 10:30:08.166065 125117698930240 subprocess_utils.py:97] Finished Jackhmmer in 90.349 seconds
+I1218 10:34:25.502829 125117858309696 subprocess_utils.py:97] Finished Jackhmmer in 347.685 seconds
+I1218 10:38:51.002773 125117690537536 subprocess_utils.py:97] Finished Jackhmmer in 613.185 seconds
+I1218 10:41:05.691345 125117849916992 subprocess_utils.py:97] Finished Jackhmmer in 747.875 seconds
+Traceback (most recent call last):
+  File "/app/alphafold/run_alphafold.py", line 678, in <module>
+    app.run(main)
+  File "/alphafold3_venv/lib/python3.11/site-packages/absl/app.py", line 308, in run
+Running AlphaFold 3. Please note that standard AlphaFold 3 model parameters are
+only available under terms of use provided at
+https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_USE.md.
+If you do not agree to these terms and are using AlphaFold 3 derived model
+parameters, cancel execution of AlphaFold 3 inference with CTRL-C, and do not
+use the model parameters.
+Found local devices: [CudaDevice(id=0), CudaDevice(id=1), CudaDevice(id=2)]
+Building model from scratch...
+Processing 1 fold inputs.
+Processing fold input DSAFAS
+Checking we can load the model parameters...
+    _run_main(main, args)
+  File "/alphafold3_venv/lib/python3.11/site-packages/absl/app.py", line 254, in _run_main
+    sys.exit(main(argv))
+             ^^^^^^^^^^
+  File "/app/alphafold/run_alphafold.py", line 663, in main
+    process_fold_input(
+  File "/app/alphafold/run_alphafold.py", line 529, in process_fold_input
+Running data pipeline...
+Processing chain A
+    fold_input = pipeline.DataPipeline(data_pipeline_config).process(fold_input)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/alphafold3_venv/lib/python3.11/site-packages/alphafold3/data/pipeline.py", line 462, in process
+    processed_chains.append(self.process_protein_chain(chain))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/alphafold3_venv/lib/python3.11/site-packages/alphafold3/data/pipeline.py", line 411, in process_protein_chain
+    unpaired_msa, paired_msa, template_hits = _get_protein_msa_and_templates(
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/alphafold3_venv/lib/python3.11/site-packages/alphafold3/data/pipeline.py", line 69, in _get_protein_msa_and_templates
+    uniref90_msa = uniref90_msa_future.result()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/usr/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/alphafold3_venv/lib/python3.11/site-packages/alphafold3/data/msa.py", line 337, in get_msa
+    return Msa.from_a3m(
+           ^^^^^^^^^^^^^
+  File "/alphafold3_venv/lib/python3.11/site-packages/alphafold3/data/msa.py", line 220, in from_a3m
+    return cls(
+           ^^^^
+  File "/alphafold3_venv/lib/python3.11/site-packages/alphafold3/data/msa.py", line 108, in __init__
+    raise ValueError(
+ValueError: First MSA sequence SADADSAFASFA is not the query_sequence='sadaDSAFASFA'

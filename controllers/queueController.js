@@ -1,18 +1,9 @@
 const jobController = require('./jobController');
 const dockerService = require('../services/dockerService');
 const logController = require('./logController'); // Import logController
-const { tailDockerLogs } = logController; // Extract tailDockerLogs
-/*
-dockerService.startContainer(currentJob.id, jobConfig, (err, processID) => {
-    if (err) {
-        console.error(`Failed to start Docker container: ${err.message}`);
-        return;
-    }
 
-    // Log job completion with the correct processID
-    logController.logJobCompletion(currentJob.id, processID);
-});*/
-
+// Add a Set to track jobs already being processed
+const processedJobs = new Set();
 
 const jobQueue = [];
 let isProcessing = false;
@@ -31,7 +22,6 @@ function enqueueJob(job) {
         jobQueue.push(job);
         allJobs.set(job.id, job); // Add to allJobs for status tracking
         console.log(`Job enqueued: ${job.id} - ${job.filename}`);
-        //debugState(); // Debugging current state
         processQueue(); // Start processing the queue
     } catch (error) {
         console.error(`Failed to enqueue job: ${job.id}. Error: ${error.message}`);
@@ -57,40 +47,40 @@ async function processQueue() {
     allJobs.set(currentJob.id, { ...currentJob });
     console.log(`Processing job: ${currentJob.id}`);
 
-    // NEW: Write initial log when the job starts
-    const startMessage = `Job ${currentJob.id} started processing.`;
-    console.log(startMessage);
-
     try {
         console.log(`[Job ${currentJob.id}] Starting Docker container`);
         dockerService.runDockerJob(
-    currentJob.id,
-    currentJob.filename,
-    (error) => {
-        if (error) {
-            currentJob.status = 'failed';
-            logController.logJobFailure(currentJob.id, error);
-            console.error(`Job failed: ${currentJob.id}. Error: ${error.message}`);
-        } else {
-            currentJob.status = 'completed';
-            logController.logJobCompletion(currentJob.id, currentJob.containerId); // Use containerId from currentJob
-            console.log(`Job completed: ${currentJob.id}`);
-        }
+            currentJob.id,
+            currentJob.filename,
+            (error) => {
+                // Handle Docker job completion
+                if (error) {
+                    currentJob.status = 'failed';
+                    logController.logJobFailure(currentJob.id, error);
+                    console.error(`Job failed: ${currentJob.id}. Error: ${error.message}`);
+                } else {
+                    currentJob.status = 'completed';
+                    console.log(`Job completed: ${currentJob.id}`);
 
-        // Update allJobs and reset processing
-        allJobs.set(currentJob.id, { ...currentJob });
-        isProcessing = false;
-        currentJob = null;
-        processQueue(); // Process the next job
-    },
-    (containerId) => {
-        // Handle Docker container start and begin log streaming
-        console.log(`[Job ${currentJob.id}] Docker container started with ID: ${containerId}`);
-        currentJob.containerId = containerId; // Track container ID in the current job
-        tailDockerLogs(currentJob.id, containerId); // Tail the Docker logs
-    }
-);
+                    // Call tailDockerLogs only if not already processed
+                    if (!processedJobs.has(currentJob.id)) {
+                        processedJobs.add(currentJob.id); // Mark the job as processed
+                        logController.tailDockerLogs(currentJob.id, currentJob.processID);
+                    }
+                }
 
+                // Update allJobs and reset processing
+                allJobs.set(currentJob.id, { ...currentJob });
+                isProcessing = false;
+                currentJob = null;
+                processQueue(); // Process the next job
+            },
+            (containerId) => {
+                // Handle Docker container start
+                console.log(`[Job ${currentJob.id}] Docker container started with ID: ${containerId}`);
+                currentJob.processID = containerId; // Attach the process ID to the job
+            }
+        );
     } catch (error) {
         currentJob.status = 'failed';
         logController.logJobFailure(currentJob.id, error);
@@ -104,10 +94,6 @@ async function processQueue() {
     }
 }
 
-
-
-
-
 /**
  * Get the current status of the queue and jobs.
  */
@@ -118,7 +104,7 @@ function getQueueStatus() {
         ...Array.from(allJobs.values()).filter((job) => job.status === 'completed' || job.status === 'failed'),
     ];
 
-      return {
+    return {
         isProcessing,
         currentJob,
         queue: jobQueue.map((job, index) => ({
@@ -130,20 +116,8 @@ function getQueueStatus() {
     };
 }
 
-/**
- * Debugging utility: Log the current state of the queue
- */
-function debugState() {
-    console.log('--- Debugging Queue State ---');
-    console.log('Job Queue:', jobQueue);
-    console.log('Current Job:', currentJob);
-    console.log('All Jobs:', Array.from(allJobs.values()));
-    console.log('-----------------------------');
-}
-
 module.exports = {
     enqueueJob,
     processQueue,
-    getQueueStatus, // Export queue status for use in endpoints
-    //debugState,
+    getQueueStatus,
 };

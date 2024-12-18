@@ -27,30 +27,38 @@ function streamServerLogs(req, res) {
 
     const logFile = path.join(logDir, `${jobId}.log`);
 
-    console.log(`[Job ${jobId}] Streaming logs to frontend...`);
+    console.log(`[Job ${jobId}] Received request to stream logs.`);
 
+    // Setup SSE headers
     res.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         Connection: 'keep-alive',
     });
 
+    res.flushHeaders();
+
+    // Retry mechanism for missing log file
+    let retryInterval;
+
+    let isStreaming = false; // Add a flag
+
+const startStreaming = () => {
+    if (isStreaming) return; // Prevent multiple starts
+    isStreaming = true;
+    console.log(`[Job ${jobId}] Starting to stream logs from ${logFile}.`);
     let lastSize = 0;
-    const interval = setInterval(() => {
+
+    retryInterval = setInterval(() => {
         fs.stat(logFile, (err, stats) => {
-            if (err) {
-                if (err.code === 'ENOENT') {
-                    console.log(`[Job ${jobId}] Log file not found. Retrying...`);
-                } else {
-                    console.error(`[Job ${jobId}] Error reading log file: ${err.message}`);
-                }
-                return;
+            if (err && err.code === 'ENOENT') {
+                console.log(`[Job ${jobId}] Log file not found. Retrying...`);
+                return; // Log file doesn't exist yet
             }
 
             if (stats.size > lastSize) {
                 const stream = fs.createReadStream(logFile, {
                     start: lastSize,
-                    end: stats.size,
                     encoding: 'utf8',
                 });
 
@@ -62,13 +70,33 @@ function streamServerLogs(req, res) {
             }
         });
     }, 1000);
+};
 
-    req.on('close', () => {
-        console.log(`[Job ${jobId}] Client disconnected. Stopping log stream.`);
-        clearInterval(interval);
-        res.end();
-    });
+
+    // Check if the log file already exists
+    if (fs.existsSync(logFile)) {
+        startStreaming();
+    } else {
+        console.log(`[Job ${jobId}] Log file not found. Waiting for creation...`);
+
+        // Watch for log file creation
+        retryInterval = setInterval(() => {
+            if (fs.existsSync(logFile)) {
+                clearInterval(retryInterval);
+                startStreaming();
+            }
+        }, 1000);
+    }
+
+  req.on('close', () => {
+    console.log(`[Job ${jobId}] Client disconnected from log stream.`);
+    clearInterval(retryInterval);
+    isStreaming = false; // Reset streaming flag
+    res.end();
+});
+
 }
+
 
 
 
@@ -112,16 +140,7 @@ function logJobFailure(jobId, error) {
  * @param {String} log - The log content to save.
  */
 function tailDockerLogs(jobId, processID) {
-    exec(`docker inspect ${processID}`, (err) => {
-    if (err) {
-        console.error(`[Job ${jobId}] Container with ID ${processID} does not exist.`);
-        return;
-    }
-
-    console.log(`[Job ${jobId}] Container with ID ${processID} exists. Starting logs.`);
-
-    });
-    const logFile = path.join(logDir, `${jobId}.log`);
+    const logFile = path.join(logDir, `${jobId}.log`); // Ensure logFile is properly declared here
 
     console.log(`[Job ${jobId}] Starting to tail Docker logs for process ID ${processID}.`);
 
@@ -140,6 +159,7 @@ function tailDockerLogs(jobId, processID) {
         // Spawn the docker logs command
         const dockerLogs = spawn('docker', ['logs', '-f', processID]);
 
+        // Handle standard output logs
         dockerLogs.stdout.on('data', (data) => {
             const logEntry = data.toString();
             fs.appendFile(logFile, logEntry, (err) => {
@@ -149,6 +169,7 @@ function tailDockerLogs(jobId, processID) {
             });
         });
 
+        // Handle error logs
         dockerLogs.stderr.on('data', (data) => {
             const logEntry = data.toString();
             fs.appendFile(logFile, logEntry, (err) => {
@@ -158,6 +179,7 @@ function tailDockerLogs(jobId, processID) {
             });
         });
 
+        // Handle process close event
         dockerLogs.on('close', (code) => {
             if (code === 0) {
                 console.log(`[Job ${jobId}] Docker log streaming completed.`);
@@ -166,11 +188,16 @@ function tailDockerLogs(jobId, processID) {
             }
         });
 
+        // Handle process errors
         dockerLogs.on('error', (err) => {
             console.error(`[Job ${jobId}] Error while spawning Docker logs: ${err.message}`);
+            fs.appendFile(logFile, `Error: ${err.message}\n`, (err) => {
+                if (err) console.error(`[Job ${jobId}] Failed to write error to log file: ${err.message}`);
+            });
         });
     });
 }
+
 
 
 module.exports = {

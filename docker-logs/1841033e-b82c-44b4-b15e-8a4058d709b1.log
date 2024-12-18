@@ -22,3 +22,7 @@ I1218 10:14:35.275145 136450733491776 subprocess_utils.py:68] Launching subproce
 I1218 10:14:35.275145 136450733491776 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmp213_jkrr/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmp213_jkrr/query.fasta /opt/alphafold3_database/bfd-first_non_consensus_sequences.fasta"
 I1218 10:14:35.275969 136450725099072 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmp_xof4xl0/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmp_xof4xl0/query.fasta /opt/alphafold3_database/uniprot_all_2021_04.fa"
 I1218 10:14:35.275969 136450725099072 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmp_xof4xl0/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmp_xof4xl0/query.fasta /opt/alphafold3_database/uniprot_all_2021_04.fa"
+I1218 10:16:22.942783 136450733491776 subprocess_utils.py:97] Finished Jackhmmer in 107.668 seconds
+I1218 10:16:22.942783 136450733491776 subprocess_utils.py:97] Finished Jackhmmer in 107.668 seconds
+I1218 10:20:11.446441 136450750277184 subprocess_utils.py:97] Finished Jackhmmer in 336.173 seconds
+I1218 10:20:11.446441 136450750277184 subprocess_utils.py:97] Finished Jackhmmer in 336.173 seconds
