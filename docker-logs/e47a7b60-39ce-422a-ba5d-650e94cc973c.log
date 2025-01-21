@@ -1,0 +1,12 @@
+I1219 14:20:27.290090 127059281928192 folding_input.py:1044] Detected /home/entropy/AF3_server_BZH/job_data/safsdfdsfds.json is an AlphaFold 3 JSON since the top-level is not a list.
+I1219 14:20:27.920158 127059281928192 xla_bridge.py:895] Unable to initialize backend 'rocm': module 'jaxlib.xla_extension' has no attribute 'GpuAllocatorConfig'
+I1219 14:20:27.921161 127059281928192 xla_bridge.py:895] Unable to initialize backend 'tpu': INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+I1219 14:20:32.813048 127059281928192 pipeline.py:40] Getting protein MSAs for sequence sdfsdfdsfsdfsdfsdf
+I1219 14:20:32.816425 127029362030144 jackhmmer.py:78] Query sequence: sdfsdfdsfsdfsdfsdf
+I1219 14:20:32.817417 127029362030144 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmpdhhp6j91/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmpdhhp6j91/query.fasta /opt/alphafold3_database/uniref90_2022_05.fa"
+I1219 14:20:32.817651 127029353637440 jackhmmer.py:78] Query sequence: sdfsdfdsfsdfsdfsdf
+I1219 14:20:32.818746 127029345244736 jackhmmer.py:78] Query sequence: sdfsdfdsfsdfsdfsdf
+I1219 14:20:32.819244 127029353637440 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmph5486wr7/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmph5486wr7/query.fasta /opt/alphafold3_database/mgy_clusters_2022_05.fa"
+I1219 14:20:32.820102 127029336852032 jackhmmer.py:78] Query sequence: sdfsdfdsfsdfsdfsdf
+I1219 14:20:32.820376 127029345244736 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmpplt7_xly/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmpplt7_xly/query.fasta /opt/alphafold3_database/bfd-first_non_consensus_sequences.fasta"
+I1219 14:20:32.820911 127029336852032 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmpank8ulra/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmpank8ulra/query.fasta /opt/alphafold3_database/uniprot_all_2021_04.fa"

@@ -1,0 +1,62 @@
+I0121 10:28:41.850183 126854047145984 folding_input.py:1044] Detected /home/entropy/AF3_server_BZH/job_data/testgdd.json is an AlphaFold 3 JSON since the top-level is not a list.
+I0121 10:28:42.469598 126854047145984 xla_bridge.py:895] Unable to initialize backend 'rocm': module 'jaxlib.xla_extension' has no attribute 'GpuAllocatorConfig'
+I0121 10:28:42.470832 126854047145984 xla_bridge.py:895] Unable to initialize backend 'tpu': INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+I0121 10:28:45.908689 126854047145984 pipeline.py:40] Getting protein MSAs for sequence MSIEYSVIVPAYHEKLNIKPLTTRLFAGMSPEMAKKTELIFVDDNSQDGSVEEVDALAHQGYNVRIIVRTNERGLSSAVLKGFYEAKGQYLVCMDADLQHPPETVPKLFESLHDHAFTLGTRYAPGVGIDKDWPMYRRVISSTARMMARPLTIASDPMSGFFGLQKKYLENCNPRDINSQGFKIALELLAKLPLPRDPRVAIGEVPFTFGVRTEGESKLSGKVIIQYLQQLKELYVFKFGANNLILFITFWSILFFYVCYQLYHLVF
+I0121 10:28:45.910938 126787250021952 jackhmmer.py:78] Query sequence: MSIEYSVIVPAYHEKLNIKPLTTRLFAGMSPEMAKKTELIFVDDNSQDGSVEEVDALAHQGYNVRIIVRTNERGLSSAVLKGFYEAKGQYLVCMDADLQHPPETVPKLFESLHDHAFTLGTRYAPGVGIDKDWPMYRRVISSTARMMARPLTIASDPMSGFFGLQKKYLENCNPRDINSQGFKIALELLAKLPLPRDPRVAIGEVPFTFGVRTEGESKLSGKVIIQYLQQLKELYVFKFGANNLILFITFWSILFFYVCYQLYHLVF
+I0121 10:28:45.911969 126762087753280 jackhmmer.py:78] Query sequence: MSIEYSVIVPAYHEKLNIKPLTTRLFAGMSPEMAKKTELIFVDDNSQDGSVEEVDALAHQGYNVRIIVRTNERGLSSAVLKGFYEAKGQYLVCMDADLQHPPETVPKLFESLHDHAFTLGTRYAPGVGIDKDWPMYRRVISSTARMMARPLTIASDPMSGFFGLQKKYLENCNPRDINSQGFKIALELLAKLPLPRDPRVAIGEVPFTFGVRTEGESKLSGKVIIQYLQQLKELYVFKFGANNLILFITFWSILFFYVCYQLYHLVF
+I0121 10:28:45.913012 126787250021952 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmp3lxsg119/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmp3lxsg119/query.fasta /opt/alphafold3_database/uniref90_2022_05.fa"
+I0121 10:28:45.913275 126762079360576 jackhmmer.py:78] Query sequence: MSIEYSVIVPAYHEKLNIKPLTTRLFAGMSPEMAKKTELIFVDDNSQDGSVEEVDALAHQGYNVRIIVRTNERGLSSAVLKGFYEAKGQYLVCMDADLQHPPETVPKLFESLHDHAFTLGTRYAPGVGIDKDWPMYRRVISSTARMMARPLTIASDPMSGFFGLQKKYLENCNPRDINSQGFKIALELLAKLPLPRDPRVAIGEVPFTFGVRTEGESKLSGKVIIQYLQQLKELYVFKFGANNLILFITFWSILFFYVCYQLYHLVF
+I0121 10:28:45.914040 126762087753280 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmp7x2_qnka/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmp7x2_qnka/query.fasta /opt/alphafold3_database/mgy_clusters_2022_05.fa"
+I0121 10:28:45.914543 126762000315968 jackhmmer.py:78] Query sequence: MSIEYSVIVPAYHEKLNIKPLTTRLFAGMSPEMAKKTELIFVDDNSQDGSVEEVDALAHQGYNVRIIVRTNERGLSSAVLKGFYEAKGQYLVCMDADLQHPPETVPKLFESLHDHAFTLGTRYAPGVGIDKDWPMYRRVISSTARMMARPLTIASDPMSGFFGLQKKYLENCNPRDINSQGFKIALELLAKLPLPRDPRVAIGEVPFTFGVRTEGESKLSGKVIIQYLQQLKELYVFKFGANNLILFITFWSILFFYVCYQLYHLVF
+I0121 10:28:45.915006 126762079360576 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmpkic6fz9m/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmpkic6fz9m/query.fasta /opt/alphafold3_database/bfd-first_non_consensus_sequences.fasta"
+I0121 10:28:45.915618 126762000315968 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/jackhmmer -o /dev/null -A /tmp/tmpqe1ouic8/output.sto --noali --F1 0.0005 --F2 5e-05 --F3 5e-07 --cpu 8 -N 1 -E 0.0001 --incE 0.0001 /tmp/tmpqe1ouic8/query.fasta /opt/alphafold3_database/uniprot_all_2021_04.fa"
+I0121 10:30:39.144823 126762079360576 subprocess_utils.py:97] Finished Jackhmmer in 113.230 seconds
+I0121 10:30:39.360318 126762079360576 jackhmmer.py:137] Limiting MSA depth to 5000
+I0121 10:36:26.033574 126787250021952 subprocess_utils.py:97] Finished Jackhmmer in 460.120 seconds
+I0121 10:36:27.570406 126787250021952 jackhmmer.py:137] Limiting MSA depth to 10000
+I0121 10:37:40.005367 126762000315968 subprocess_utils.py:97] Finished Jackhmmer in 534.090 seconds
+I0121 10:37:41.743704 126762000315968 jackhmmer.py:137] Limiting MSA depth to 50000
+I0121 10:42:01.607727 126762087753280 subprocess_utils.py:97] Finished Jackhmmer in 795.694 seconds
+I0121 10:42:05.486957 126762087753280 jackhmmer.py:137] Limiting MSA depth to 5000
+I0121 10:42:05.626774 126854047145984 pipeline.py:73] Getting protein MSAs took 799.72 seconds for sequence MSIEYSVIVPAYHEKLNIKPLTTRLFAGMSPEMAKKTELIFVDDNSQDGSVEEVDALAHQGYNVRIIVRTNERGLSSAVLKGFYEAKGQYLVCMDADLQHPPETVPKLFESLHDHAFTLGTRYAPGVGIDKDWPMYRRVISSTARMMARPLTIASDPMSGFFGLQKKYLENCNPRDINSQGFKIALELLAKLPLPRDPRVAIGEVPFTFGVRTEGESKLSGKVIIQYLQQLKELYVFKFGANNLILFITFWSILFFYVCYQLYHLVF
+I0121 10:42:05.627036 126854047145984 pipeline.py:79] Deduplicating MSAs and getting protein templates for sequence MSIEYSVIVPAYHEKLNIKPLTTRLFAGMSPEMAKKTELIFVDDNSQDGSVEEVDALAHQGYNVRIIVRTNERGLSSAVLKGFYEAKGQYLVCMDADLQHPPETVPKLFESLHDHAFTLGTRYAPGVGIDKDWPMYRRVISSTARMMARPLTIASDPMSGFFGLQKKYLENCNPRDINSQGFKIALELLAKLPLPRDPRVAIGEVPFTFGVRTEGESKLSGKVIIQYLQQLKELYVFKFGANNLILFITFWSILFFYVCYQLYHLVF
+I0121 10:42:05.784440 126762087753280 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/hmmbuild --informat stockholm --hand --amino /tmp/tmpnyxs_ymo/output.hmm /tmp/tmpnyxs_ymo/query.msa"
+I0121 10:42:06.143678 126762087753280 subprocess_utils.py:97] Finished Hmmbuild in 0.359 seconds
+I0121 10:42:06.148666 126762087753280 subprocess_utils.py:68] Launching subprocess "/hmmer/bin/hmmsearch --noali --cpu 8 --F1 0.1 --F2 0.1 --F3 0.1 -E 100 --incE 100 --domE 100 --incdomE 100 -A /tmp/tmpcbf04ts3/output.sto /tmp/tmpcbf04ts3/query.hmm /opt/alphafold3_database/pdb_seqres_2022_09_28.fasta"
+I0121 10:42:10.349248 126762087753280 subprocess_utils.py:97] Finished Hmmsearch in 4.200 seconds
+I0121 10:43:01.220374 126854047145984 pipeline.py:108] Deduplicating MSAs and getting protein templates took 55.59 seconds for sequence MSIEYSVIVPAYHEKLNIKPLTTRLFAGMSPEMAKKTELIFVDDNSQDGSVEEVDALAHQGYNVRIIVRTNERGLSSAVLKGFYEAKGQYLVCMDADLQHPPETVPKLFESLHDHAFTLGTRYAPGVGIDKDWPMYRRVISSTARMMARPLTIASDPMSGFFGLQKKYLENCNPRDINSQGFKIALELLAKLPLPRDPRVAIGEVPFTFGVRTEGESKLSGKVIIQYLQQLKELYVFKFGANNLILFITFWSILFFYVCYQLYHLVF
+I0121 10:43:01.220796 126854047145984 pipeline.py:115] Filtering protein templates for sequence MSIEYSVIVPAYHEKLNIKPLTTRLFAGMSPEMAKKTELIFVDDNSQDGSVEEVDALAHQGYNVRIIVRTNERGLSSAVLKGFYEAKGQYLVCMDADLQHPPETVPKLFESLHDHAFTLGTRYAPGVGIDKDWPMYRRVISSTARMMARPLTIASDPMSGFFGLQKKYLENCNPRDINSQGFKIALELLAKLPLPRDPRVAIGEVPFTFGVRTEGESKLSGKVIIQYLQQLKELYVFKFGANNLILFITFWSILFFYVCYQLYHLVF
+I0121 10:43:01.222957 126854047145984 pipeline.py:124] Filtering protein templates took 0.00 seconds for sequence MSIEYSVIVPAYHEKLNIKPLTTRLFAGMSPEMAKKTELIFVDDNSQDGSVEEVDALAHQGYNVRIIVRTNERGLSSAVLKGFYEAKGQYLVCMDADLQHPPETVPKLFESLHDHAFTLGTRYAPGVGIDKDWPMYRRVISSTARMMARPLTIASDPMSGFFGLQKKYLENCNPRDINSQGFKIALELLAKLPLPRDPRVAIGEVPFTFGVRTEGESKLSGKVIIQYLQQLKELYVFKFGANNLILFITFWSILFFYVCYQLYHLVF
+I0121 10:43:05.363363 126854047145984 pipeline.py:160] processing testgdd, random_seed=1
+Running AlphaFold 3. Please note that standard AlphaFold 3 model parameters are
+only available under terms of use provided at
+https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_USE.md.
+If you do not agree to these terms and are using AlphaFold 3 derived model
+parameters, cancel execution of AlphaFold 3 inference with CTRL-C, and do not
+use the model parameters.
+Found local devices: [CudaDevice(id=0), CudaDevice(id=1), CudaDevice(id=2)]
+Building model from scratch...
+Processing 1 fold inputs.
+Processing fold input testgdd
+Checking we can load the model parameters...
+Running data pipeline...
+Processing chain A
+Processing chain A took 855.46 seconds
+Processing chain B
+Processing chain B took 0.00 seconds
+Output directory: /home/entropy/output_alphafold3/testgdd
+Writing model input JSON to /home/entropy/output_alphafold3/testgdd
+Predicting 3D structure for testgdd for seed(s) (1,)...
+Featurising data for seeds (1,)...
+Featurising testgdd with rng_seed 1.
+Featurising testgdd with rng_seed 1 took 4.76 seconds.
+Featurising data for seeds (1,) took  8.65 seconds.
+Running model inference for seed 1...
+Running model inference for seed 1 took  73.71 seconds.
+Extracting output structures (one per sample) for seed 1...
+Extracting output structures (one per sample) for seed 1 took  0.36 seconds.
+Running model inference and extracting output structures for seed 1 took  74.07 seconds.
+Running model inference and extracting output structures for seeds (1,) took  74.07 seconds.
+Writing outputs for testgdd for seed(s) (1,)...
+Done processing fold input testgdd.
+Done processing 1 fold inputs.
