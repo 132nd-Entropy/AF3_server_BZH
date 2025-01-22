@@ -1,5 +1,5 @@
 import { fetchQueueStatus } from './queueStatus.js';
-import { fetchCurrentLogs } from './logStreaming.js';
+//import { fetchCurrentLogs } from './logStreaming.js';
 
 // Unified error reporting function
 function showError(message) {
@@ -55,7 +55,7 @@ export async function createJSONFile() {
             return;
         }
 
-        const moleculeID = idLetters[moleculeCounter % idLetters.length];
+        const moleculeID = generateLipidId(moleculeCounter);
         moleculeCounter++;
 
         let sequenceObject = {};
@@ -80,6 +80,20 @@ export async function createJSONFile() {
     });
 
     if (errorOccurred) return;
+
+    // Check if the "Add Lipids" checkbox is checked
+    const addLipidsChecked = document.getElementById("addLipidsCheckbox").checked;
+    if (addLipidsChecked) {
+        for (let i = 0; i < 30; i++) {
+            sequences.push({
+                ligand: {
+                    id: generateLipidId(moleculeCounter),
+                    ccdCodes: ["OLA"]
+                }
+            });
+            moleculeCounter++;
+        }
+    }
 
     const jsonData = {
         name: projectName,
@@ -123,3 +137,17 @@ export async function createJSONFile() {
         showError("An error occurred while creating the JSON file.");
     }
 }
+
+/**
+ * Generate a lipid ID in the format: AA, AB, ..., AZ, BA, ..., ZZ
+ * @param {number} index - The current index to generate the ID for
+ * @returns {string} The generated lipid ID
+ */
+function generateLipidId(index) {
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const firstLetter = letters[Math.floor(index / 26) % 26];
+    const secondLetter = letters[index % 26];
+    return `${firstLetter}${secondLetter}`;
+}
+
+
