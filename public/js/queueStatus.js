@@ -1,7 +1,7 @@
 import { fetchCurrentLogs } from './logStreaming.js';
 
 let currentJob = null; // Declare the current job globally
-let currentJobId = null; // Track the current job ID for log streaming
+let currentJobId = null; // Track the currently streaming job ID
 
 export function getCurrentJob() {
     return currentJob; // Return the current job
@@ -17,19 +17,21 @@ export async function fetchQueueStatus() {
         const data = await response.json();
         console.log("Queue status data:", data);
 
-        // 1. Find the currently processing job in the server data
+        // Find the currently processing job in the server data
         const processingJobs = data.jobs.filter(j => j.status === 'processing');
 
-if (processingJobs.length === 1) {
-  currentJob = processingJobs[0];
-} else if (processingJobs.length > 1) {
-  console.warn("Unexpected: multiple processing jobs!");
-  // Optionally handle this scenario
-} else {
-  currentJob = null;
-}
+        if (processingJobs.length === 1) {
+            currentJob = processingJobs[0];
+            localStorage.setItem('currentJobId', currentJob.id);  // Store in localStorage
+        } else if (processingJobs.length > 1) {
+            console.warn("Unexpected: multiple processing jobs!");
+            currentJob = processingJobs[0];  // Handle first job found
+        } else {
+            console.log("No processing job found.");
+            currentJob = null;
+            localStorage.removeItem('currentJobId');  // Clear stored job ID
+        }
 
-        // Update the UI elements
         updateUI(data);
 
     } catch (error) {
@@ -37,9 +39,13 @@ if (processingJobs.length === 1) {
         handleError(error, "queue status");
     }
 }
+
 export async function reconnectToLogs() {
     try {
-        // First, update queue status to figure out what job is processing
+        // Retrieve the last known job ID from localStorage
+        const storedJobId = localStorage.getItem('currentJobId');
+
+        // First, update queue status to confirm the job is still running
         await fetchQueueStatus();
 
         if (currentJob && currentJob.id) {
@@ -51,8 +57,10 @@ export async function reconnectToLogs() {
                 throw new Error("Failed to reconnect to logs.");
             }
 
-            // Restart streaming logs for the current job
             fetchCurrentLogs(currentJob.id);
+        } else if (storedJobId) {
+            console.log(`No job found in queue, attempting to reconnect to stored Job ID: ${storedJobId}`);
+            fetchCurrentLogs(storedJobId);
         } else {
             console.log("No current job to reconnect to.");
         }
@@ -61,6 +69,11 @@ export async function reconnectToLogs() {
         handleError(error, "log reconnection");
     }
 }
+
+// Auto-reconnect logs on page reload
+document.addEventListener("DOMContentLoaded", () => {
+    reconnectToLogs();
+});
 
 function updateUI(data) {
     // 1. Show which job is processing (if any)

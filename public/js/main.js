@@ -1,5 +1,5 @@
 import { fetchQueueStatus, getCurrentJob, reconnectToLogs } from './queueStatus.js';
-import { fetchCurrentLogs } from './logStreaming.js';
+import { fetchCurrentLogs, reconnectToPreviousLog } from './logStreaming.js';
 import { addMolecule } from './moleculeManager.js';
 import { createJSONFile } from './jobSubmission.js';
 
@@ -22,6 +22,9 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
         console.error('Element "startPredictionButton" not found.');
     }
+
+    // Reconnect to any existing job logs after a page reload
+    reconnectToPreviousLog();
 
     // Initial fetch of queue status and logs
     initializeQueueStatusAndLogs();
@@ -55,12 +58,11 @@ async function fetchQueueStatusAndUpdateLogs() {
         // 2. Retrieve the currentJob from queueStatus.js
         const currentJob = getCurrentJob();
 
-        // 3. Only switch logs if the currentJob actually has status === 'processing'
-        //    and differs from our currently tracked jobId
+        // 3. Only switch logs if the currentJob is 'processing' and differs from the tracked jobId
         if (
-          currentJob &&
-          currentJob.status === 'processing' &&  // <--- Extra check
-          currentJob.id !== currentJobId
+            currentJob &&
+            currentJob.status === 'processing' &&
+            currentJob.id !== currentJobId
         ) {
             console.log(`Switching to logs for new processing job ${currentJob.id}`);
             currentJobId = null; // Unset so we can set a new SSE
@@ -78,7 +80,6 @@ async function fetchQueueStatusAndUpdateLogs() {
         handlePollingError();
     }
 }
-
 
 /**
  * Handle polling errors gracefully.
