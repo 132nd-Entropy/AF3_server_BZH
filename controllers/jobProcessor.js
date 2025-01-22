@@ -1,5 +1,5 @@
 // controllers/jobProcessor.js
-
+const logController = require('./logController');
 const { generateJSONFile } = require('./jsonGenerator');
 const { logJobCompletion, logJobFailure } = require('./logController');
 const dockerService = require('../services/dockerService');

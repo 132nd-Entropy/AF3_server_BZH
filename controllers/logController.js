@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const { EventEmitter } = require('events');
+const TailFile = require('tail-file');
+
 
 // Directory to store log files
 const logDir = path.join(__dirname, '../docker-logs');
@@ -51,57 +53,62 @@ function streamServerLogs(req, res) {
 }
 
 /**
- * Start streaming logs from the Docker container.
+ * Tail logs from an existing Docker log file on disk.
  * @param {String} jobId - The ID of the job.
- * @param {String} processID - The Docker process/container ID.
+ * @param {String} logFilename - The name of the Docker log file for that job.
  */
-function tailDockerLogs(jobId, processID) {
-    if (!processID) {
-        console.error(`[Job ${jobId}] Invalid process ID.`);
+function tailDockerLogs(jobId, logFilename) {
+    if (!logFilename) {
+        console.error(`[Job ${jobId}] Invalid log filename.`);
         return;
     }
 
-    console.log(`[Job ${jobId}] Starting to tail Docker logs for process ID ${processID}.`);
+    const logFilePath = path.join(logDir, logFilename);
+    if (!fs.existsSync(logFilePath)) {
+        fs.writeFileSync(logFilePath, '');
+    }
+    console.log(`[Job ${jobId}] Starting to tail Docker log file: ${logFilePath}`);
 
-    const dockerLogs = spawn('docker', ['logs', '-f', processID]);
+    // lineHandler: called for each new line
+    function lineHandler(line) {
+        console.log(`[Job ${jobId}] Docker log line: ${line.trim()}`);
+        // Emit line to SSE clients
+        logStreamEmitter.emit(jobId, line);
+    }
 
-    dockerLogs.stdout.on('data', (data) => {
-        const logEntry = data.toString();
-        console.log(`[Job ${jobId}] Docker log (stdout): ${logEntry.trim()}`);
-        logStreamEmitter.emit(jobId, logEntry);
-    });
-
-    dockerLogs.stderr.on('data', (data) => {
-        const logEntry = data.toString();
-        console.error(`[Job ${jobId}] Docker log (stderr): ${logEntry.trim()}`);
-        logStreamEmitter.emit(jobId, logEntry);
-    });
-
-    dockerLogs.on('close', (code) => {
-        console.log(`[Job ${jobId}] Docker log streaming process exited with code ${code}.`);
-        logStreamEmitter.emit(jobId, '[END OF LOG]');
-    });
-
-    dockerLogs.on('error', (err) => {
-        console.error(`[Job ${jobId}] Error while spawning Docker logs: ${err.message}`);
+    // errorHandler: handle tail-file errors
+    function errorHandler(err) {
+        console.error(`[Job ${jobId}] Error tailing file: ${err.message}`);
         logStreamEmitter.emit(jobId, `[ERROR] ${err.message}`);
+    }
+
+    // Create a TailFile instance with the old v1.x signature
+    //     TailFile(filepath, lineHandler, errorHandler, [options])
+    const tail = new TailFile(logFilePath, lineHandler, errorHandler, {
+        startPos: 0  // read from the beginning of the file
+        // Other options: breakOnError, verbose, useWatchFile, waitPause, readInterval...
     });
+
+    // No .catch(...) because this start() does NOT return a Promise in v1.x
+    tail.start();
 }
 
 /**
- * Log job completion.
+ * Log job completion / start streaming its logs.
  * @param {String} jobId - The ID of the completed job.
- * @param {String} processID - The Docker process/container ID.
+ * @param {String} logFilename - The Docker log file name (e.g., jobId + '.log').
  */
-function logJobCompletion(jobId, processID) {
-    if (!processID) {
-        console.error('Error: processID is undefined');
-        return;
-    }
 
-    console.log(`[Job ${jobId}] Job completed successfully.`);
-    tailDockerLogs(jobId, processID);
+function logJobCompletion(jobId) {
+    const logFilename = `${jobId}.log`;
+ }
+
+function onJobStart(jobId) {
+    const logFilename = `${jobId}.log`;
+    tailDockerLogs(jobId, logFilename);
 }
+
+
 
 /**
  * Log job failure.
@@ -123,6 +130,7 @@ module.exports = {
     logJobFailure,
     tailDockerLogs,
     logStreamEmitter,
+    onJobStart,
 };
 
 console.log('logController.js loaded successfully');

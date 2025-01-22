@@ -6,6 +6,7 @@ const jobLogs = {}; // Persistent storage for logs
 const docker = require('dockerode');
 const dockerClient = new docker();
 const path = require('path');
+const logController = require('../controllers/logController');
 
 /**
  * Captures and streams Docker container logs to a log file.
@@ -155,6 +156,8 @@ function runDockerJob(jobId, filePath, callback, onContainerStart) {
         if (!containerId) {
             containerId = log; // Capture container ID
             console.log(`[Job ${jobId}] Docker container started with ID: ${containerId}`);
+            const logFilename = `${jobId}.log`;
+            logController.tailDockerLogs(jobId, logFilename);
             captureContainerLogs(jobId, containerId); // Start capturing logs
             if (typeof onContainerStart === 'function') {
                 onContainerStart(containerId);
