@@ -10,49 +10,62 @@ export function getCurrentJob() {
 export async function fetchQueueStatus() {
     try {
         const response = await fetch("/queue-status");
-        if (!response.ok) throw new Error(`Failed to fetch queue status: ${response.statusText}`);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch queue status: ${response.statusText}`);
+        }
 
         const data = await response.json();
         console.log("Queue status data:", data);
 
-        // Find the currently processing job
-        const processingJob = data.jobs.find(job => job.status === 'processing');
+        // 1. Find the currently processing job in the server data
+        const processingJob = data.jobs.find((job) => job.status === 'processing');
+
         if (processingJob) {
+            // We have a job that the server says is processing
             if (processingJob.id !== currentJobId) {
-                // New job detected; start streaming its logs
+                // It's a different processing job than we had before, so switch logs
+                console.log(`Switching to logs for new processing job ${processingJob.id}`);
                 currentJobId = processingJob.id;
-                console.log(`Switching to logs for Job ${currentJobId}`);
-                fetchCurrentLogs(currentJobId); // Start streaming logs for the new job
+                fetchCurrentLogs(currentJobId);
             }
-            currentJob = processingJob; // Update the global current job
+            currentJob = processingJob;
         } else {
-            // No processing job
-            if (currentJobId) {
-                console.log("No job is currently processing.");
+            // The server did not list any 'processing' job
+            if (currentJob && currentJob.status === 'processing') {
+                // The server doesn't see a processing job, but we think we still have one
+                // Possibly a race condition or the server is about to mark it completed
+                console.log("No processing job listed, but we previously had one. Holding logs for one more cycle...");
+            } else {
+                // If there's definitely no job processing, or old job was completed/failed
+                console.log("No job is currently processing. Clearing currentJob.");
+                currentJob = null;
+                currentJobId = null;
             }
-            currentJobId = null;
-            currentJob = null; // Clear the global current job
         }
 
-        updateUI(data); // Update the UI with the latest queue status
+        // Update the UI elements
+        updateUI(data);
+
     } catch (error) {
         console.error("Error fetching queue status:", error);
         handleError(error, "queue status");
     }
 }
-
 export async function reconnectToLogs() {
     try {
-        await fetchQueueStatus(); // Update the queue status and current job
+        // First, update queue status to figure out what job is processing
+        await fetchQueueStatus();
 
         if (currentJob && currentJob.id) {
             console.log(`Reconnecting to logs for Job ${currentJob.id}...`);
 
-            // Call the reconnect-logs endpoint
+            // Hit the reconnect-logs endpoint
             const reconnectResponse = await fetch(`/reconnect-logs?jobId=${currentJob.id}`);
-            if (!reconnectResponse.ok) throw new Error("Failed to reconnect to logs.");
+            if (!reconnectResponse.ok) {
+                throw new Error("Failed to reconnect to logs.");
+            }
 
-            // Start streaming logs for the current job
+            // Restart streaming logs for the current job
             fetchCurrentLogs(currentJob.id);
         } else {
             console.log("No current job to reconnect to.");
@@ -64,7 +77,7 @@ export async function reconnectToLogs() {
 }
 
 function updateUI(data) {
-    // Update the currently processing job display
+    // 1. Show which job is processing (if any)
     const currentJobDisplay = document.getElementById("currentJobDisplay");
     if (currentJobDisplay) {
         currentJobDisplay.innerHTML = currentJob
@@ -72,21 +85,25 @@ function updateUI(data) {
             : "<p>No job is currently processing.</p>";
     }
 
-    // Update the pending jobs list
+    // 2. Show queue of jobs that are still 'queued'
     const queueList = document.getElementById("queueList");
     if (queueList) {
-        const queue = data?.jobs.filter(job => job.status === 'queued') || [];
+        const queue = data?.jobs.filter((job) => job.status === 'queued') || [];
         queueList.innerHTML = queue.length
-            ? `<p><strong>Pending Jobs:</strong></p><ul>${queue.map((job, index) => `<li>Position ${index + 1}: ${job.filename}</li>`).join("")}</ul>`
+            ? `<p><strong>Pending Jobs:</strong></p><ul>${queue
+                  .map((job, index) => `<li>Position ${index + 1}: ${job.filename}</li>`)
+                  .join("")}</ul>`
             : "<p>No jobs in the queue.</p>";
     }
 
-    // Update the completed jobs list
+    // 3. Show completed jobs
     const completedJobsList = document.getElementById("completedJobsList");
     if (completedJobsList) {
-        const completedJobs = data?.jobs.filter(job => job.status === 'completed') || [];
+        const completedJobs = data?.jobs.filter((job) => job.status === 'completed') || [];
         completedJobsList.innerHTML = completedJobs.length
-            ? `<p><strong>Completed Jobs:</strong></p><ul>${completedJobs.map(job => `<li>${job.filename}</li>`).join("")}</ul>`
+            ? `<p><strong>Completed Jobs:</strong></p><ul>${completedJobs
+                  .map((job) => `<li>${job.filename}</li>`)
+                  .join("")}</ul>`
             : "<p>No completed jobs yet.</p>";
     }
 }

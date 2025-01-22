@@ -58,7 +58,6 @@ async function processQueue() {
                         } else {
                             console.log(`[Job ${currentJob.id}] Docker job finished.`);
                             currentJob.status = 'completed';
-                            logController.tailDockerLogs(currentJob.id, currentJob.processID);
                             resolve(); // Mark job as completed
                         }
                         allJobs.set(currentJob.id, { ...currentJob });
@@ -66,6 +65,7 @@ async function processQueue() {
                     (containerId) => {
                         console.log(`[Job ${currentJob.id}] Docker container started with ID: ${containerId}`);
                         currentJob.processID = containerId;
+                        logController.tailDockerLogs(currentJob.id, `${currentJob.id}.log`);
                     }
                 );
             });
