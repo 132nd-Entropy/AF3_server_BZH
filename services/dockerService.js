@@ -158,7 +158,7 @@ function runDockerJob(jobId, filePath, callback, onContainerStart) {
             console.log(`[Job ${jobId}] Docker container started with ID: ${containerId}`);
             const logFilename = `${jobId}.log`;
             logController.tailDockerLogs(jobId, logFilename);
-            //captureContainerLogs(jobId, containerId); // Start capturing logs
+            captureContainerLogs(jobId, containerId); // Start capturing logs
             if (typeof onContainerStart === 'function') {
                 onContainerStart(containerId);
             }

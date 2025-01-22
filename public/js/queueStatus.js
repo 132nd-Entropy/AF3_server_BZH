@@ -18,30 +18,16 @@ export async function fetchQueueStatus() {
         console.log("Queue status data:", data);
 
         // 1. Find the currently processing job in the server data
-        const processingJob = data.jobs.find((job) => job.status === 'processing');
+        const processingJobs = data.jobs.filter(j => j.status === 'processing');
 
-        if (processingJob) {
-            // We have a job that the server says is processing
-            if (processingJob.id !== currentJobId) {
-                // It's a different processing job than we had before, so switch logs
-                console.log(`Switching to logs for new processing job ${processingJob.id}`);
-                currentJobId = processingJob.id;
-                fetchCurrentLogs(currentJobId);
-            }
-            currentJob = processingJob;
-        } else {
-            // The server did not list any 'processing' job
-            if (currentJob && currentJob.status === 'processing') {
-                // The server doesn't see a processing job, but we think we still have one
-                // Possibly a race condition or the server is about to mark it completed
-                console.log("No processing job listed, but we previously had one. Holding logs for one more cycle...");
-            } else {
-                // If there's definitely no job processing, or old job was completed/failed
-                console.log("No job is currently processing. Clearing currentJob.");
-                currentJob = null;
-                currentJobId = null;
-            }
-        }
+if (processingJobs.length === 1) {
+  currentJob = processingJobs[0];
+} else if (processingJobs.length > 1) {
+  console.warn("Unexpected: multiple processing jobs!");
+  // Optionally handle this scenario
+} else {
+  currentJob = null;
+}
 
         // Update the UI elements
         updateUI(data);

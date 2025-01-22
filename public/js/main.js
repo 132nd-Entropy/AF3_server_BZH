@@ -49,27 +49,36 @@ async function initializeQueueStatusAndLogs() {
  */
 async function fetchQueueStatusAndUpdateLogs() {
     try {
-        await fetchQueueStatus(); // Fetch the latest queue status
+        // 1. Update queue status (this calls fetchQueueStatus in queueStatus.js)
+        await fetchQueueStatus();
+
+        // 2. Retrieve the currentJob from queueStatus.js
         const currentJob = getCurrentJob();
 
-        if (currentJob && currentJob.id !== currentJobId) {
-            // If a new job is detected, switch to its logs
-            console.log(`Switching to logs for new Job ${currentJob.id}`);
-            currentJobId = null; // Temporarily unset to avoid premature updates
-            await fetchCurrentLogs(currentJob.id); // Start streaming logs for the new job
-            currentJobId = currentJob.id; // Update the current job ID on success
+        // 3. Only switch logs if the currentJob actually has status === 'processing'
+        //    and differs from our currently tracked jobId
+        if (
+          currentJob &&
+          currentJob.status === 'processing' &&  // <--- Extra check
+          currentJob.id !== currentJobId
+        ) {
+            console.log(`Switching to logs for new processing job ${currentJob.id}`);
+            currentJobId = null; // Unset so we can set a new SSE
+            await fetchCurrentLogs(currentJob.id);
+            currentJobId = currentJob.id;
         } else if (!currentJob && currentJobId) {
-            // If no job is processing, stop tracking logs
             console.log('No job is currently processing.');
             currentJobId = null;
         }
 
-        consecutiveErrorCount = 0; // Reset error count on success
+        // 4. Reset error count on success
+        consecutiveErrorCount = 0;
     } catch (error) {
         console.error('Error updating queue status and logs:', error);
-        handlePollingError(); // Handle the error gracefully
+        handlePollingError();
     }
 }
+
 
 /**
  * Handle polling errors gracefully.
