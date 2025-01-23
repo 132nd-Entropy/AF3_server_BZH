@@ -1,3 +1,5 @@
 
 /job_data
 *.json
+/docker-logs
+/docker-logs

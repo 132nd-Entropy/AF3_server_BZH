@@ -1,12 +1,3 @@
-import { fetchQueueStatus } from './queueStatus.js';
-//import { fetchCurrentLogs } from './logStreaming.js';
-
-// Unified error reporting function
-function showError(message) {
-    console.error(message);
-    alert(message);
-}
-
 export async function createJSONFile() {
     const projectName = document.getElementById("projectName").value.trim();
     if (!projectName) {
@@ -22,7 +13,6 @@ export async function createJSONFile() {
 
     let errorOccurred = false;
     const sequences = [];
-    const idLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     let moleculeCounter = 0;
 
     moleculeBlocks.forEach((moleculeBlock, index) => {
@@ -82,9 +72,9 @@ export async function createJSONFile() {
     if (errorOccurred) return;
 
     // Check if the "Add Lipids" checkbox is checked
-    const addLipidsChecked = document.getElementById("addLipidsCheckbox").checked;
-    if (addLipidsChecked) {
-        for (let i = 0; i < 30; i++) {
+    const addLipidsCheckbox = document.getElementById("addLipidsCheckbox");
+    if (addLipidsCheckbox && addLipidsCheckbox.checked) {
+        for (let i = 0; i < 60; i++) {
             sequences.push({
                 ligand: {
                     id: generateLipidId(moleculeCounter),
@@ -133,21 +123,21 @@ export async function createJSONFile() {
             showError(`Error: ${result.error}`);
         }
     } catch (error) {
-        console.error("Error creating JSON file:", error);
-        showError("An error occurred while creating the JSON file.");
+      // console.error("Error creating JSON file:", error);
     }
 }
 
 /**
- * Generate a lipid ID in the format: AA, AB, ..., AZ, BA, ..., ZZ
+ * Generate a lipid ID in the format: A, B, ..., Z, AA, AB, ..., AZ, BA, ..., ZZ, AAA, AAB, ...
  * @param {number} index - The current index to generate the ID for
  * @returns {string} The generated lipid ID
  */
 function generateLipidId(index) {
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const firstLetter = letters[Math.floor(index / 26) % 26];
-    const secondLetter = letters[index % 26];
-    return `${firstLetter}${secondLetter}`;
+    let id = '';
+    while (index >= 0) {
+        id = letters[index % 26] + id;
+        index = Math.floor(index / 26) - 1;
+    }
+    return id;
 }
-
-
