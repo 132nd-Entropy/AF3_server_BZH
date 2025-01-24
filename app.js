@@ -90,9 +90,9 @@ app.use((req, res) => {
 module.exports = app;
 
 // Start the server
-if (require.main === module) {
-    const PORT = process.env.PORT || 49200;
-    app.listen(PORT, '0.0.0.0', () => {
-        console.log(`Server running at http://127.0.0.1:${PORT}`);
-    });
-}
+// Start the server
+const PORT = process.env.PORT || 49200;
+app.listen(PORT, '129.206.154.125', () => {
+    console.log(`Server running at http://129.206.154.125:${PORT}`);
+});
+

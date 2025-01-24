@@ -1,74 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Generate Input File for AlphaFold 3</title>
-    <!-- Link to external CSS -->
-    <link rel="stylesheet" href="css/styles.css" />
-</head>
+   <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Generate Input File for AlphaFold 3</title>
+      <!-- Link to external CSS -->
+      <link rel="stylesheet" href="css/styles.css" />
+   </head>
+   <body>
+      <script type="module" src="js/moleculeManager.js"></script>
+      <script type="module" src="js/jobSubmission.js"></script>
+      <script type="module" src="js/queueStatus.js"></script>
+      <script type="module" src="js/logStreaming.js"></script>
+      <script type="module" src="js/main.js"></script>
 
-<script type="module" src="js/moleculeManager.js"></script>
-<script type="module" src="js/jobSubmission.js"></script>
-<script type="module" src="js/queueStatus.js"></script>
-<script type="module" src="js/logStreaming.js"></script>
-<script type="module" src="js/main.js"></script>
+      <!-- Header -->
+      <header>
+         <img src="images/logo-trans.svg" alt="BZH Logo" />
+         <h2>Brügger Lab - Rainer Beck</h2>
+         <a href="user_guide.html" target="_blank" rel="noopener noreferrer">User Guide</a>
+      </header>
 
-
-
-
-<body>
-    <!-- Header -->
-    <header>
-        <img src="images/logo-trans.svg" alt="BZH Logo" />
-        <h2>Brügger Lab - Rainer Beck</h2>
-        <a href="user_guide.html" target="_blank">User Guide</a>
-    </header>
-    <!-- Job Queue and Completed Jobs -->
-    <section id="jobSection">
-        <div id="queueStatus">
+      <!-- Job Queue and Completed Jobs -->
+      <section id="jobSection">
+         <div id="queueStatus">
             <h3>Job Queue</h3>
             <p id="currentJobDisplay">Loading current job...</p>
             <div id="queueList">
-                <p>Loading queue...</p>
+               <p>Loading queue...</p>
+               <div class="spinner"></div>
             </div>
-        </div>
-
-        <div id="completedJobs">
+         </div>
+         <div id="completedJobs">
             <h3>Completed Jobs</h3>
             <div id="completedJobsList">
-                <p>Loading completed jobs...</p>
+               <p>Loading completed jobs...</p>
             </div>
-        </div>
-    </section>
-    <!-- Main Content -->
-    <main>
-    <h1>Generate Input File for AlphaFold 3</h1>
-    <label for="projectName">Prediction Name:</label>
-    <input type="text" id="projectName" placeholder="Enter Prediction ID" />
-    <br />
-    <br />
-    <div id="moleculeContainer">
-    </div>
-    <button id="addMoleculeButton">Add Another Molecule</button>
-    <br />
-    <br />
-    <label>
-        <input type="checkbox" id="addLipidsCheckbox">
-        Add Lipids
-    </label>
-    <br />
-    <br />
-    <button id="startPredictionButton" type="button">Start Prediction</button>
-    <p id="successMessage"></p>
-</main>
+         </div>
+      </section>
 
-    <!-- Docker Logs Section -->
-    <section id="dockerLogs">
-        <h3>Current Job Logs</h3>
-        <textarea id="logsDisplay" rows="20" readonly></textarea>
-    </section>
-    <!-- Link to external JavaScript -->
+      <!-- Main Content -->
+      <main>
+         <h1>Generate Input File for AlphaFold 3</h1>
 
-</body>
+         <label for="projectName">Prediction Name:</label>
+         <input type="text" id="projectName" placeholder="Enter Prediction ID" />
+         <br /><br />
+
+         <!-- Molecule Container -->
+         <div id="moleculeContainer">
+            <div class="molecule-block" data-molecule-id="1">
+               <select id="molecule1" class="moleculeTypeDropdown" onchange="toggleLigandAmountField(this)">
+                  <option value="protein">Protein</option>
+                  <option value="dna">DNA</option>
+                  <option value="rna">RNA</option>
+                  <option value="ligand">Ligand</option>
+                  <option value="ion">Ion</option>
+               </select>
+               <input type="text" id="sequence1" placeholder="Enter Sequence">
+               <input type="text" id="ligandAmount1" placeholder="Enter Amount" value="1" style="display:none; width: 100px;">
+               <span id="error1" class="error-message"></span>
+            </div>
+         </div>
+
+         <br />
+         <button id="addMoleculeButton">Add Another Molecule</button>
+         <br /><br />
+
+         <!-- Lipid Options Section -->
+         <div class="lipid-options">
+            <div class="lipid-checkbox-container">
+               <input type="checkbox" id="addLipidsCheckbox">
+               <label for="addLipidsCheckbox">Add Lipids</label>
+            </div>
+            <select id="lipidTypeDropdown" disabled>
+               <option value="OLA" selected>OLEIC ACID (OLA)</option>
+            </select>
+            <select id="lipidAmountDropdown" disabled>
+               <option value="15" selected>15</option>
+               <option value="30">30</option>
+               <option value="60">60</option>
+               <option value="90">90</option>
+            </select>
+         </div>
+
+         <br /><br />
+         <button id="startPredictionButton" type="button">Start Prediction</button>
+         <p id="successMessage"></p>
+      </main>
+
+      <!-- Docker Logs Section -->
+      <section id="dockerLogs">
+         <h3>Current Job Logs</h3>
+         <textarea id="logsDisplay" rows="20" readonly></textarea>
+      </section>
+   </body>
 </html>

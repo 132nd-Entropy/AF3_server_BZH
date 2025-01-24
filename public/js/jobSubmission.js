@@ -1,3 +1,19 @@
+function toggleLipidOptions() {
+    const checkbox = document.getElementById("addLipidsCheckbox");
+    const lipidTypeDropdown = document.getElementById("lipidTypeDropdown");
+    const lipidAmountDropdown = document.getElementById("lipidAmountDropdown");
+
+    // Enable or disable dropdowns based on checkbox state
+    if (checkbox.checked) {
+        lipidTypeDropdown.disabled = false;
+        lipidAmountDropdown.disabled = false;
+    } else {
+        lipidTypeDropdown.disabled = true;
+        lipidAmountDropdown.disabled = true;
+    }
+}
+
+
 export async function createJSONFile() {
     const projectName = document.getElementById("projectName").value.trim();
     if (!projectName) {
@@ -16,69 +32,81 @@ export async function createJSONFile() {
     let moleculeCounter = 0;
 
     moleculeBlocks.forEach((moleculeBlock, index) => {
-        if (errorOccurred) return;
+    if (errorOccurred) return;
 
-        const moleculeId = moleculeBlock.getAttribute("data-molecule-id");
+    const moleculeId = moleculeBlock.getAttribute("data-molecule-id");
 
-        const moleculeTypeElement = document.getElementById(`molecule${moleculeId}`);
-        const sequenceElement = document.getElementById(`sequence${moleculeId}`);
-        const errorField = document.getElementById(`error${moleculeId}`);
+    const moleculeTypeElement = document.getElementById(`molecule${moleculeId}`);
+    const sequenceElement = document.getElementById(`sequence${moleculeId}`);
+    const ligandAmountElement = document.getElementById(`ligandAmount${moleculeId}`);
+    const errorField = document.getElementById(`error${moleculeId}`);
 
-        if (!moleculeTypeElement || !sequenceElement || !errorField) {
-            showError(`Elements with IDs molecule${moleculeId}, sequence${moleculeId}, or error${moleculeId} not found.`);
-            errorOccurred = true;
-            return;
-        }
+    if (!moleculeTypeElement || !sequenceElement || !errorField) {
+        showError(`Elements with IDs molecule${moleculeId}, sequence${moleculeId}, or error${moleculeId} not found.`);
+        errorOccurred = true;
+        return;
+    }
 
-        const moleculeType = moleculeTypeElement.value.toLowerCase();
-        const input = sequenceElement.value.trim() || null;
+    const moleculeType = moleculeTypeElement.value.toLowerCase();
+    const input = sequenceElement.value.trim() || null;
 
-        if (!input) {
-            showError(`Please enter input for Molecule ${index + 1}.`);
-            errorOccurred = true;
-            return;
-        }
+    if (!input) {
+        showError(`Please enter input for Molecule ${index + 1}.`);
+        errorOccurred = true;
+        return;
+    }
 
-        if (errorField.innerText) {
-            showError(`Validation error in Molecule ${index + 1}: ${errorField.innerText}`);
-            errorOccurred = true;
-            return;
-        }
+    if (errorField.innerText) {
+        showError(`Validation error in Molecule ${index + 1}: ${errorField.innerText}`);
+        errorOccurred = true;
+        return;
+    }
 
-        const moleculeID = generateLipidId(moleculeCounter);
-        moleculeCounter++;
+    const moleculeID = generateLipidId(moleculeCounter);
+    moleculeCounter++;
 
-        let sequenceObject = {};
+    let sequenceObject = {};
 
-        if (["protein", "dna", "rna"].includes(moleculeType)) {
-            sequenceObject[moleculeType] = {
-                id: moleculeID,
-                sequence: input
-            };
-        } else if (["ligand", "ion"].includes(moleculeType)) {
-            sequenceObject[moleculeType] = {
-                id: moleculeID,
-                ccdCodes: [input]
-            };
-        } else {
-            showError(`Unsupported molecule type for Molecule ${index + 1}.`);
-            errorOccurred = true;
-            return;
-        }
+    if (["protein", "dna", "rna"].includes(moleculeType)) {
+        sequenceObject[moleculeType] = {
+            id: moleculeID,
+            sequence: input
+        };
+    } else if (moleculeType === "ligand") {
+        const ligandAmount = parseInt(ligandAmountElement.value.trim(), 10) || 1;
+        sequenceObject[moleculeType] = {
+            id: moleculeID,
+            ccdCodes: [input],
+            amount: ligandAmount
+        };
+    } else if (moleculeType === "ion") {
+        sequenceObject[moleculeType] = {
+            id: moleculeID,
+            ccdCodes: [input]
+        };
+    } else {
+        showError(`Unsupported molecule type for Molecule ${index + 1}.`);
+        errorOccurred = true;
+        return;
+    }
 
-        sequences.push(sequenceObject);
-    });
+    sequences.push(sequenceObject);
+});
+
 
     if (errorOccurred) return;
 
     // Check if the "Add Lipids" checkbox is checked
     const addLipidsCheckbox = document.getElementById("addLipidsCheckbox");
     if (addLipidsCheckbox && addLipidsCheckbox.checked) {
-        for (let i = 0; i < 60; i++) {
+        const lipidType = document.getElementById("lipidTypeDropdown").value;
+        const lipidAmount = parseInt(document.getElementById("lipidAmountDropdown").value, 10);
+
+        for (let i = 0; i < lipidAmount; i++) {
             sequences.push({
                 ligand: {
                     id: generateLipidId(moleculeCounter),
-                    ccdCodes: ["OLA"]
+                    ccdCodes: [lipidType]
                 }
             });
             moleculeCounter++;

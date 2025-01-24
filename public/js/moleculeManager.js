@@ -2,18 +2,21 @@ let moleculeCount = 0;
 
 // Export the addMolecule function
 export function addMolecule() {
-    const moleculeId = Date.now();
+    // Generate unique molecule ID using Date.now() + molecule count
+    const moleculeId = `mol${Date.now()}_${moleculeCount}`;
     moleculeCount++;
+
     const container = document.getElementById("moleculeContainer");
 
     const newMolecule = document.createElement("div");
     newMolecule.className = "molecule-block";
     newMolecule.id = `molecule${moleculeId}Block`;
     newMolecule.setAttribute('data-molecule-id', moleculeId);
+
     newMolecule.innerHTML = `
         <h3>Molecule ${moleculeCount}</h3>
         <label for="molecule${moleculeId}">Molecule Type:</label>
-        <select id="molecule${moleculeId}" onchange="handleMoleculeTypeChange(${moleculeId})">
+        <select id="molecule${moleculeId}" class="moleculeTypeDropdown">
             <option value="Protein" selected>Protein</option>
             <option value="Ligand">Ligand</option>
             <option value="RNA">RNA</option>
@@ -22,14 +25,28 @@ export function addMolecule() {
         </select>
         <div id="sequenceField${moleculeId}">
             <label for="sequence${moleculeId}">Enter Protein Sequence:</label>
-            <textarea id="sequence${moleculeId}" placeholder="Paste protein sequence here..." oninput="validateSequence(${moleculeId})"></textarea>
+            <textarea id="sequence${moleculeId}" placeholder="Paste protein sequence here..."></textarea>
             <p class="error" id="error${moleculeId}"></p>
         </div>
-        <button class="remove-button" onclick="removeMolecule(${moleculeId})">Remove Molecule</button>
+        <button class="remove-button" data-remove-id="${moleculeId}">Remove Molecule</button>
     `;
 
     container.appendChild(newMolecule);
+
+    // Add event listeners to the newly created elements
+    document.getElementById(`molecule${moleculeId}`).addEventListener("change", function() {
+        handleMoleculeTypeChange(moleculeId);
+    });
+
+    document.getElementById(`sequence${moleculeId}`).addEventListener("input", function() {
+        validateSequence(moleculeId);
+    });
+
+    document.querySelector(`[data-remove-id="${moleculeId}"]`).addEventListener("click", function() {
+        removeMolecule(moleculeId);
+    });
 }
+
 
 // Export removeMolecule and attach to the window for global access
 export function removeMolecule(moleculeId) {
