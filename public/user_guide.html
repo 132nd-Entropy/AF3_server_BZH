@@ -96,17 +96,19 @@
         <p>Follow these steps to add a job:</p>
         <ol>
             <li>Enter a <strong>Prediction Name</strong> (e.g., <span class="highlight">protein_analysis_01</span>).</li>
-            <li>Select a <strong>Molecule Type</strong> (e.g., Protein, RNA, DNA, Ligand, or Ion).</li>
-            <li>Enter the <strong>Molecule Sequence</strong> or <strong>CCD Code</strong> (for Ligands/Ions).</li>
+            <li>Select a <strong>Molecule Type</strong> (Protein, RNA, DNA, Ligand, or Ion).</li>
+            <li>
+                Enter the <strong>Molecule Sequence</strong> or <strong>CCD Code</strong>:
+                <ul>
+                    <li><strong>Protein:</strong> Amino acid sequence.</li>
+                    <li><strong>RNA/DNA:</strong> Nucleotide sequence.</li>
+                    <li><strong>Ligand:</strong> CCD code and specify the amount.</li>
+                    <li><strong>Ion:</strong> Select Ion type and specify the number of ions.</li>
+                </ul>
+            </li>
+            <li>Optional: From the <strong>Optional Input</strong> dropdown, select <strong>Add Lipids to Predict Membrane Proteins</strong> to enable lipid type and amount selections.</li>
             <li>Click <strong>Start Prediction</strong> to add the job to the queue.</li>
         </ol>
-        <p><strong>Note:</strong> Ensure the input is valid for the selected molecule type:</p>
-        <ul>
-            <li><strong>Protein:</strong> Valid amino acids (<span class="highlight">ARNDCEQGHILKMFPSTWYV</span>)</li>
-            <li><strong>RNA:</strong> Valid nucleotides (<span class="highlight">AUGC</span>)</li>
-            <li><strong>DNA:</strong> Valid nucleotides (<span class="highlight">ATGC</span>)</li>
-            <li><strong>Ligand/Ion:</strong> Valid CCD codes (alphanumeric)</li>
-        </ul>
     </section>
     <section id="viewing-logs">
         <h2>Viewing Logs</h2>
@@ -122,9 +124,9 @@
         <p>If you encounter issues, try the following steps:</p>
         <ul>
             <li><strong>No Logs Displayed:</strong> Ensure a job is running. Refresh the page if necessary.</li>
-            <li><strong>Queue Not Updating:</strong> Wait for a few seconds, as the queue refreshes automatically every 5 seconds.</li>
-            <li><strong>Invalid Sequence Error:</strong> Check the input format for the molecule type.</li>
-            <li><strong>Backend Not Responding:</strong> Verify the server is running on the correct port (<span class="highlight">49200</span>).</li>
+            <li><strong>Queue Not Updating:</strong> Wait a few seconds, as the queue refreshes every 5 seconds.</li>
+            <li><strong>Invalid Sequence Error:</strong> Verify the input format for the molecule type.</li>
+            <li><strong>Backend Not Responding:</strong> Ensure the server is running on the correct port (<span class="highlight">49200</span>).</li>
         </ul>
     </section>
     <footer>

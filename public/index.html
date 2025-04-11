@@ -67,22 +67,14 @@
          <button id="addMoleculeButton">Add Another Molecule</button>
          <br /><br />
 
-         <!-- Lipid Options Section -->
-         <div class="lipid-options">
-            <div class="lipid-checkbox-container">
-               <input type="checkbox" id="addLipidsCheckbox">
-               <label for="addLipidsCheckbox">Add Lipids</label>
-            </div>
-            <select id="lipidTypeDropdown" disabled>
-               <option value="OLA" selected>OLEIC ACID (OLA)</option>
-            </select>
-            <select id="lipidAmountDropdown" disabled>
-               <option value="15" selected>15</option>
-               <option value="30">30</option>
-               <option value="60">60</option>
-               <option value="90">90</option>
-            </select>
-         </div>
+<!-- Optional Input Section -->
+<label for="optionalInputDropdown">Optional Input:</label>
+<select id="optionalInputDropdown">
+    <option value="">Select Optional Input</option>
+    <option value="addLipids">Add Lipids to Predict Membrane Proteins</option>
+</select>
+
+<div id="lipidOptionsContainer"></div>
 
          <br /><br />
          <button id="startPredictionButton" type="button">Start Prediction</button>

@@ -2,14 +2,22 @@ import { fetchQueueStatus, getCurrentJob, reconnectToLogs } from './queueStatus.
 import { fetchCurrentLogs, reconnectToPreviousLog } from './logStreaming.js';
 import { addMolecule } from './moleculeManager.js';
 import { createJSONFile } from './jobSubmission.js';
+import { handleOptionalInputChange } from './moleculeManager.js';
 
 let currentJobId = null;
 let consecutiveErrorCount = 0;
+let queuePollingInterval = null;
 
 document.addEventListener("DOMContentLoaded", () => {
-    const lipidCheckbox = document.getElementById("addLipidsCheckbox");
-    if (lipidCheckbox) lipidCheckbox.addEventListener("change", toggleLipidOptions);
+    // Optional input dropdown listener for dynamic lipid creation
+    const optionalInputDropdown = document.getElementById("optionalInputDropdown");
+    if (optionalInputDropdown) {
+        optionalInputDropdown.addEventListener("change", handleOptionalInputChange);
+    } else {
+        console.error('Element "optionalInputDropdown" not found.');
+    }
 
+    // Add molecule button listener
     const addMoleculeButton = document.getElementById("addMoleculeButton");
     if (addMoleculeButton) {
         addMoleculeButton.addEventListener("click", addMolecule);
@@ -17,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error('Element "addMoleculeButton" not found.');
     }
 
+    // Start prediction button listener
     const startPredictionButton = document.getElementById("startPredictionButton");
     if (startPredictionButton) {
         startPredictionButton.addEventListener("click", createJSONFile);
@@ -24,19 +33,23 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error('Element "startPredictionButton" not found.');
     }
 
-    document.getElementById("moleculeContainer").addEventListener("change", function(event) {
-    if (event.target.classList.contains("moleculeTypeDropdown")) {
-        const moleculeId = event.target.getAttribute("id").replace("molecule", "");
-        toggleLigandAmountField(event.target);
+    // Molecule container change listener
+    const moleculeContainer = document.getElementById("moleculeContainer");
+    if (moleculeContainer) {
+        moleculeContainer.addEventListener("change", function(event) {
+            if (event.target.classList.contains("moleculeTypeDropdown")) {
+                toggleLigandAmountField(event.target);
+            }
+        });
+    } else {
+        console.error('Element "moleculeContainer" not found.');
     }
-});
 
-
+    // Initial reconnection and polling setup
     reconnectToPreviousLog();
     initializeQueueStatusAndLogs();
-    setInterval(fetchQueueStatusAndUpdateLogs, 5000);
+    queuePollingInterval = setInterval(fetchQueueStatusAndUpdateLogs, 5000);
 });
-
 
 async function initializeQueueStatusAndLogs() {
     try {
@@ -74,7 +87,7 @@ function handlePollingError() {
     consecutiveErrorCount++;
     if (consecutiveErrorCount > 3) {
         console.warn('Too many consecutive errors. Pausing polling.');
-        clearInterval(fetchQueueStatusAndUpdateLogs);
+        clearInterval(queuePollingInterval);
     }
 }
 
@@ -83,14 +96,25 @@ function toggleLipidOptions() {
     const lipidTypeDropdown = document.getElementById("lipidTypeDropdown");
     const lipidAmountDropdown = document.getElementById("lipidAmountDropdown");
 
-    lipidTypeDropdown.disabled = !checkbox.checked;
-    lipidAmountDropdown.disabled = !checkbox.checked;
-}
+    if (!checkbox || !lipidTypeDropdown || !lipidAmountDropdown) {
+        console.error("One or more lipid toggle elements not found.");
+        return;
+    }
 
+    const enabled = checkbox.checked;
+    lipidTypeDropdown.disabled = !enabled;
+    lipidAmountDropdown.disabled = !enabled;
+
+    console.log(`Lipid options ${enabled ? 'enabled' : 'disabled'}`);
+}
 
 function toggleLigandAmountField(selectElement) {
     const moleculeId = selectElement.id.replace("molecule", "");
     const ligandAmountInput = document.getElementById(`ligandAmount${moleculeId}`);
-    ligandAmountInput.style.display = selectElement.value === "ligand" ? "inline-block" : "none";
-    ligandAmountInput.value = selectElement.value === "ligand" ? "1" : "";
+
+    if (ligandAmountInput) {
+        const isLigand = selectElement.value === "ligand";
+        ligandAmountInput.style.display = isLigand ? "inline-block" : "none";
+        ligandAmountInput.value = isLigand ? "1" : "";
+    }
 }

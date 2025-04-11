@@ -171,4 +171,31 @@ export function validateSequence(moleculeId) {
         errorField.innerText = "";
     }
 }
+
+export function handleOptionalInputChange() {
+    const optionalInputDropdown = document.getElementById("optionalInputDropdown");
+    const lipidOptionsContainer = document.getElementById("lipidOptionsContainer");
+
+    if (optionalInputDropdown.value === "addLipids") {
+        lipidOptionsContainer.innerHTML = `
+            <label for="lipidTypeDropdown">Lipid Type:</label>
+            <select id="lipidTypeDropdown">
+                <option value="OLA">OLEIC ACID (OLA)</option>
+            </select>
+
+            <label for="lipidAmountDropdown">Amount:</label>
+            <select id="lipidAmountDropdown">
+                <option value="15">15</option>
+                <option value="30">30</option>
+                <option value="60">60</option>
+                <option value="90">90</option>
+            </select>
+        `;
+    } else {
+        lipidOptionsContainer.innerHTML = "";
+    }
+}
+window.handleOptionalInputChange = handleOptionalInputChange;
+
+
 window.validateSequence = validateSequence; // Attach globally for inline HTML use
