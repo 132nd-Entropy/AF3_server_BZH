@@ -61,18 +61,20 @@ window.removeMolecule = removeMolecule; // Attach globally for inline HTML use
 export function handleMoleculeTypeChange(moleculeId) {
     const moleculeType = document.getElementById(`molecule${moleculeId}`).value;
     const sequenceField = document.getElementById(`sequenceField${moleculeId}`);
-    const sequenceLabel = sequenceField.querySelector(`label[for="sequence${moleculeId}"]`);
+    const sequenceLabel = sequenceField.querySelector(`label[for=\"sequence${moleculeId}\"]`);
     const sequenceInput = document.getElementById(`sequence${moleculeId}`);
     const errorField = document.getElementById(`error${moleculeId}`);
 
-    // Clear any existing error message
+    // Clear existing error messages and additional dropdown
     errorField.innerText = "";
-
-    // Remove any existing compound database link
     const existingLink = document.getElementById(`compoundDatabaseLink${moleculeId}`);
-    if (existingLink) {
-        existingLink.remove();
-    }
+    if (existingLink) existingLink.remove();
+
+    const existingIonDropdown = document.getElementById(`ionDropdown${moleculeId}`);
+    if (existingIonDropdown) existingIonDropdown.remove();
+
+    const existingIonAmountInput = document.getElementById(`ionAmount${moleculeId}`);
+    if (existingIonAmountInput) existingIonAmountInput.remove();
 
     if (moleculeType === "Protein") {
         sequenceLabel.innerText = "Enter Protein Sequence:";
@@ -86,25 +88,65 @@ export function handleMoleculeTypeChange(moleculeId) {
         sequenceLabel.innerText = "Enter DNA Sequence:";
         sequenceInput.placeholder = "Paste DNA nucleotide sequence here...";
         sequenceInput.style.display = "block";
-    } else if (moleculeType === "Ligand" || moleculeType === "Ion") {
+    } else if (moleculeType === "Ligand") {
         sequenceLabel.innerText = "Enter CCD Code:";
         sequenceInput.placeholder = "Enter Chemical Component Dictionary (CCD) Code...";
         sequenceInput.style.display = "block";
 
-        // Add compound database link
-        if (!document.getElementById(`compoundDatabaseLink${moleculeId}`)) {
-            const link = document.createElement("a");
-            link.href = "https://www.ebi.ac.uk/pdbe-srv/pdbechem/";
-            link.target = "_blank";
-            link.id = `compoundDatabaseLink${moleculeId}`;
-            link.innerText = "Search the Chemical Compound Database";
-            sequenceField.appendChild(link);
-        }
+        const link = document.createElement("a");
+        link.href = "https://www.ebi.ac.uk/pdbe-srv/pdbechem/";
+        link.target = "_blank";
+        link.id = `compoundDatabaseLink${moleculeId}`;
+        link.innerText = "Search the Chemical Compound Database";
+        sequenceField.appendChild(link);
+    } else if (moleculeType === "Ion") {
+        sequenceLabel.innerText = "Select Ion Type:";
+        sequenceInput.style.display = "none";
+
+        const ionDropdown = document.createElement("select");
+        ionDropdown.id = `ionDropdown${moleculeId}`;
+        ionDropdown.innerHTML = `
+            <option value="MG">MG²⁺</option>
+            <option value="ZN">ZN²⁺</option>
+            <option value="CL">Cl⁻</option>
+            <option value="CA">Ca²⁺</option>
+            <option value="NA">Na⁺</option>
+            <option value="MN">Mn²⁺</option>
+            <option value="K">K⁺</option>
+            <option value="CU">Cu²⁺</option>
+            <option value="CO">Co²⁺</option>
+        `;
+        sequenceField.appendChild(ionDropdown);
+
+        const ionAmountInput = document.createElement("input");
+        ionAmountInput.type = "number";
+        ionAmountInput.id = `ionAmount${moleculeId}`;
+        ionAmountInput.placeholder = "Amount";
+        ionAmountInput.min = "1";
+        ionAmountInput.value = "1";
+        ionAmountInput.style.marginLeft = "10px";
+        sequenceField.appendChild(ionAmountInput);
+
+        ionDropdown.addEventListener("change", () => {
+            sequenceInput.value = ionDropdown.value;
+        });
+        // Store ion count directly as a data attribute for easy retrieval
+        ionAmountInput.addEventListener("input", () => {
+        ionAmountInput.setAttribute('data-ion-count', ionAmountInput.value);
+        });
+
+        // Initialize values
+        sequenceInput.value = ionDropdown.value;
+        sequenceInput.setAttribute('data-ion-count', ionAmountInput.value);
+        sequenceInput.value = ionDropdown.value;
+        sequenceInput.style.display = "none"; // Hidden but stores CCD code
     } else {
         sequenceField.style.display = "none";
     }
 }
-window.handleMoleculeTypeChange = handleMoleculeTypeChange; // Attach globally for inline HTML use
+window.handleMoleculeTypeChange = handleMoleculeTypeChange;
+
+
 
 // Export validateSequence and attach to the window
 export function validateSequence(moleculeId) {
