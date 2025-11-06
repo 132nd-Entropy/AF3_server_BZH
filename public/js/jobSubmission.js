@@ -48,7 +48,7 @@ export async function createJSONFile(event) {
       }
 
       const moleculeType = moleculeTypeElement.value.toLowerCase();
-      const input = sequenceElement.value.trim() || null;
+      const input = (sequenceElement.value || "").trim() || null;
 
       if (!input) {
          showError(`Please enter input for Molecule ${index + 1}.`);
@@ -62,33 +62,38 @@ export async function createJSONFile(event) {
          return;
       }
 
-      const moleculeID = generateLipidId(moleculeCounter);
-      moleculeCounter++;
-
       if (["protein", "dna", "rna"].includes(moleculeType)) {
+         const moleculeID = generateLipidId(moleculeCounter++);
          sequences.push({
             [moleculeType]: { id: moleculeID, sequence: input }
          });
+
       } else if (moleculeType === "ligand") {
-         const ligandAmount = parseInt(ligandAmountElement.value.trim(), 10) || 1;
-         sequences.push({
-            [moleculeType]: {
-               id: moleculeID,
-               ccdCodes: [input],
-               amount: ligandAmount
-            }
-         });
-      } else if (moleculeType === "ion") {
-         const ionAmount = parseInt(ionAmountElement.value.trim(), 10) || 1;
-         for (let i = 0; i < ionAmount; i++) {
+         // ✅ AF3: no "amount" key. Repeat entries instead.
+         const times = parseInt((ligandAmountElement?.value || "").trim(), 10) || 1;
+         for (let i = 0; i < times; i++) {
+            const moleculeID = generateLipidId(moleculeCounter++);
             sequences.push({
-               ion: {
-                  id: generateLipidId(moleculeCounter),
-                  ccdCodes: [input]
+               ligand: {
+                  id: moleculeID,
+                  ccdCodes: [input]   // e.g., "GDP"
                }
             });
-            moleculeCounter++;
          }
+
+      } else if (moleculeType === "ion") {
+         // ✅ Treat ions as ligands; repeat entries; no "amount" key.
+         const times = parseInt((ionAmountElement?.value || "").trim(), 10) || 1;
+         for (let i = 0; i < times; i++) {
+            const moleculeID = generateLipidId(moleculeCounter++);
+            sequences.push({
+               ligand: {
+                  id: moleculeID,
+                  ccdCodes: [input]   // e.g., "MG", "NA", "CL"
+               }
+            });
+         }
+
       } else {
          showError(`Unsupported molecule type for Molecule ${index + 1}.`);
          errorOccurred = true;
@@ -98,20 +103,20 @@ export async function createJSONFile(event) {
 
    if (errorOccurred) return;
 
-   // Optional lipid section
+   // Optional lipid section (already repeats entries correctly)
    const lipidTypeDropdown = document.getElementById("lipidTypeDropdown");
    const lipidAmountDropdown = document.getElementById("lipidAmountDropdown");
    if (lipidTypeDropdown && lipidAmountDropdown) {
       const lipidType = lipidTypeDropdown.value;
       const lipidAmount = parseInt(lipidAmountDropdown.value, 10) || 0;
       for (let i = 0; i < lipidAmount; i++) {
+         const moleculeID = generateLipidId(moleculeCounter++);
          sequences.push({
             ligand: {
-               id: generateLipidId(moleculeCounter),
+               id: moleculeID,
                ccdCodes: [lipidType]
             }
          });
-         moleculeCounter++;
       }
    }
 
@@ -141,8 +146,7 @@ export async function createJSONFile(event) {
          const jobId = result.jobId;
          if (jobId) {
             console.log(`✅ Job queued: ${jobId}`);
-            // 🧠 IMPORTANT: Do NOT open new SSE connection here
-            // The unified /logs stream in main.js already handles output
+            // Do not open a new SSE connection here; main.js handles logs
          }
 
          await fetchQueueStatus(); // Refresh queue info
