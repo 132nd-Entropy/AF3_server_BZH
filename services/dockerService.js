@@ -141,6 +141,8 @@ function runDockerJob(jobId, filePath, callback, onContainerStart) {
         '-e', 'NVIDIA_VISIBLE_DEVICES=0',
         '-e', 'LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}',
         '-e', 'NVIDIA_DRIVER_CAPABILITIES=compute,utility',
+        '-e', 'JAX_PLATFORMS=cuda',
+
 
         // volumes
         '-v', '/home/entropy/output_alphafold3:/home/entropy/output_alphafold3',
