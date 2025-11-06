@@ -49,6 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
     reconnectToPreviousLog();
     initializeQueueStatusAndLogs();
     queuePollingInterval = setInterval(fetchQueueStatusAndUpdateLogs, 5000);
+    addMolecule(); // Automatically add the first molecule block
 });
 
 async function initializeQueueStatusAndLogs() {

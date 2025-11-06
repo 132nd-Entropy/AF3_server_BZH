@@ -48,20 +48,7 @@
          <br /><br />
 
          <!-- Molecule Container -->
-         <div id="moleculeContainer">
-            <div class="molecule-block" data-molecule-id="1">
-               <select id="molecule1" class="moleculeTypeDropdown" onchange="toggleLigandAmountField(this)">
-                  <option value="protein">Protein</option>
-                  <option value="dna">DNA</option>
-                  <option value="rna">RNA</option>
-                  <option value="ligand">Ligand</option>
-                  <option value="ion">Ion</option>
-               </select>
-               <input type="text" id="sequence1" placeholder="Enter Sequence">
-               <input type="text" id="ligandAmount1" placeholder="Enter Amount" value="1" style="display:none; width: 100px;">
-               <span id="error1" class="error-message"></span>
-            </div>
-         </div>
+        <div id="moleculeContainer"></div>
 
          <br />
          <button id="addMoleculeButton">Add Another Molecule</button>

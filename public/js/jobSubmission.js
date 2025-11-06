@@ -1,3 +1,17 @@
+import { fetchCurrentLogs } from './logStreaming.js';
+import { fetchQueueStatus } from './queueStatus.js';
+
+function showError(message) {
+   const msgElem = document.getElementById("successMessage");
+   if (msgElem) {
+      msgElem.innerText = message;
+      msgElem.style.color = "red";
+   } else {
+      alert(message); // fallback
+   }
+}
+
+
 export async function createJSONFile() {
    const projectName = document.getElementById("projectName").value.trim();
    if (!projectName) {

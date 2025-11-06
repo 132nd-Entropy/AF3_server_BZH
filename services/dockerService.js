@@ -129,21 +129,36 @@ function runDockerJob(jobId, filePath, callback, onContainerStart) {
         return;
     }
 
+    // Use the container-visible path for --json_path
+    const filename = path.basename(fullPath);
+    const containerJsonPath = `/home/entropy/AF3_server_BZH/job_data/${filename}`;
+
     const dockerCommand = [
         'run',
-        '-d', // Detached mode to return the container ID
+        '-d',
         '-i',
+        '--runtime', 'nvidia',
+        '-e', 'NVIDIA_VISIBLE_DEVICES=0',
+        '-e', 'LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}',
+        '-e', 'NVIDIA_DRIVER_CAPABILITIES=compute,utility',
+
+        // volumes
         '-v', '/home/entropy/output_alphafold3:/home/entropy/output_alphafold3',
         '-v', '/opt/alphafold3_database:/opt/alphafold3_database',
         '-v', '/opt/alphafold3_model:/opt/alphafold3_model',
-        '-v', '/home/entropy/AF3_server_BZH/job_data:/home/entropy/AF3_server_BZH/job_data',
-        '--gpus', 'all',
+        '-v', '/home/entropy/AF3_server_BZH/job_data:/home/entropy/AF3_server_BZH/job_data', // <-- added
+
+        // lib DSOs to mirror your working bash script
+        '-v', '/usr/lib/libcuda.so.1:/usr/lib/x86_64-linux-gnu/libcuda.so.1:ro',
+        '-v', '/usr/lib/libnvidia-ml.so.1:/usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1:ro',
+
         'alphafold3',
         'python3', 'run_alphafold.py',
-        `--json_path=${fullPath}`,
+        `--json_path=${containerJsonPath}`, // <-- use container path
         '--model_dir=/opt/alphafold3_model',
         '--db_dir=/opt/alphafold3_database',
         '--output_dir=/home/entropy/output_alphafold3',
+        '--jax_compilation_cache_dir=/home/entropy/output_alphafold3',
     ];
 
     const dockerProcess = spawn('docker', dockerCommand);
