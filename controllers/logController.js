@@ -1,9 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const { spawn } = require('child_process');
 const { EventEmitter } = require('events');
 const TailFile = require('tail-file');
-
 
 // Directory to store log files
 const logDir = path.join(__dirname, '../docker-logs');
@@ -11,8 +9,13 @@ if (!fs.existsSync(logDir)) {
     fs.mkdirSync(logDir, { recursive: true });
 }
 
-// Create a global EventEmitter to manage Docker log streams
+// Global emitter for SSE
 const logStreamEmitter = new EventEmitter();
+
+// ---- NEW STATE FOR QUEUED LOG STREAMING ----
+let activeJobId = null;            // currently streamed job
+const pendingJobIds = [];          // queue of upcoming jobs
+const tailInstances = new Map();   // jobId → TailFile instance
 
 /**
  * Stream logs to the client using Server-Sent Events (SSE).
@@ -20,42 +23,45 @@ const logStreamEmitter = new EventEmitter();
  * @param {Object} res - Express response object.
  */
 function streamServerLogs(req, res) {
-    const jobId = req.query.jobId;
+  console.log(`[SSE] New client connected to /logs`);
 
-    if (!jobId) {
-        return res.status(400).json({ error: 'Job ID is required' });
-    }
+  // Required SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
 
-    console.log(`[Job ${jobId}] Client connected for log streaming.`);
+  // Avoid socket timeouts on some stacks
+  if (req.socket && req.socket.setTimeout) req.socket.setTimeout(0);
 
-    // Setup SSE headers
-    res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-    });
+  // Send an initial event so the browser shows something immediately
+  res.write(`data: [Connected to unified log stream at ${new Date().toISOString()}]\n\n`);
 
-    res.write(`data: [Connected to log stream for Job ${jobId}]\n\n`);
+  // Keepalive every 25s (SSE comment line)
+  const keepAlive = setInterval(() => res.write(`: keepalive\n\n`), 25000);
 
-    const logListener = (logEntry) => {
-        res.write(`data: ${logEntry}\n\n`);
-    };
+  // Forward every tailed line to the client
+  const listener = (payload) => {
+    if (!payload || !payload.line) return;
+    // IMPORTANT: one 'data:' and a blank line terminator
+    res.write(`data: [${payload.jobId}] ${payload.line}\n\n`);
+  };
 
-    // Listen for log events for this jobId
-    logStreamEmitter.on(jobId, logListener);
+  logStreamEmitter.on('unified', listener);
 
-    // Handle client disconnects
-    req.on('close', () => {
-        console.log(`[Job ${jobId}] Client disconnected from log stream.`);
-        logStreamEmitter.removeListener(jobId, logListener);
-        res.end();
-    });
+  req.on('close', () => {
+    console.log(`[SSE] Client disconnected from /logs`);
+    clearInterval(keepAlive);
+    logStreamEmitter.removeListener('unified', listener);
+    res.end();
+  });
 }
 
+
+
+
 /**
- * Tail logs from an existing Docker log file on disk.
- * @param {String} jobId - The ID of the job.
- * @param {String} logFilename - The name of the Docker log file for that job.
+ * Tail logs for a specific job, but only stream actively if it's the active job.
+ * If another job is currently active, queue this one for later.
  */
 function tailDockerLogs(jobId, logFilename) {
     if (!logFilename) {
@@ -67,61 +73,92 @@ function tailDockerLogs(jobId, logFilename) {
     if (!fs.existsSync(logFilePath)) {
         fs.writeFileSync(logFilePath, '');
     }
-    console.log(`[Job ${jobId}] Starting to tail Docker log file: ${logFilePath}`);
 
-    // lineHandler: called for each new line
-    function lineHandler(line) {
-        console.log(`[Job ${jobId}] Docker log line: ${line.trim()}`);
-        // Emit line to SSE clients
-        logStreamEmitter.emit(jobId, line);
-    }
+    console.log(`[Job ${jobId}] Preparing to tail Docker log file: ${logFilePath}`);
 
-    // errorHandler: handle tail-file errors
-    function errorHandler(err) {
-        console.error(`[Job ${jobId}] Error tailing file: ${err.message}`);
-        logStreamEmitter.emit(jobId, `[ERROR] ${err.message}`);
-    }
+    const tail = new TailFile(
+        logFilePath,
+        (line) => {
+        // Always broadcast line to unified stream
+        logStreamEmitter.emit('unified', { jobId, line });
+        },
+        (err) => {
+            console.error(`[Job ${jobId}] Error tailing file: ${err.message}`);
+            logStreamEmitter.emit(jobId, `[ERROR] ${err.message}`);
+        },
+        { startPos: 0 }
+    );
 
-    // Create a TailFile instance with the old v1.x signature
-    //     TailFile(filepath, lineHandler, errorHandler, [options])
-    const tail = new TailFile(logFilePath, lineHandler, errorHandler, {
-        startPos: 0  // read from the beginning of the file
-        // Other options: breakOnError, verbose, useWatchFile, waitPause, readInterval...
-    });
-
-    // No .catch(...) because this start() does NOT return a Promise in v1.x
+    tailInstances.set(jobId, tail);
     tail.start();
+
+    // If no job is active, make this job the active stream
+    if (!activeJobId) {
+        activateJobStream(jobId);
+    } else if (activeJobId !== jobId) {
+        pendingJobIds.push(jobId);
+        console.log(`[Job ${jobId}] Queued log stream behind ${activeJobId}`);
+    }
 }
 
 /**
- * Log job completion / start streaming its logs.
- * @param {String} jobId - The ID of the completed job.
- * @param {String} logFilename - The Docker log file name (e.g., jobId + '.log').
+ * Promote a job to active log stream.
  */
+function activateJobStream(jobId) {
+    activeJobId = jobId;
+    console.log(`[Job ${jobId}] is now ACTIVE log stream`);
+    logStreamEmitter.emit(jobId, `[INFO] Now streaming logs for job ${jobId}`);
+}
 
+/**
+ * Mark a job as completed and, if it was active, switch to next queued job.
+ */
 function logJobCompletion(jobId) {
-    const logFilename = `${jobId}.log`;
- }
+    console.log(`[Job ${jobId}] Completed.`);
 
+    const tail = tailInstances.get(jobId);
+    if (tail) {
+        try {
+            tail.quit();
+            tailInstances.delete(jobId);
+        } catch (e) {
+            console.warn(`[Job ${jobId}] Could not stop tail cleanly: ${e.message}`);
+        }
+    }
+
+    if (activeJobId === jobId) {
+        // Activate next queued job
+        const nextJob = pendingJobIds.shift();
+        if (nextJob) {
+            console.log(`[LogQueue] Switching to next job ${nextJob}`);
+            activateJobStream(nextJob);
+        } else {
+            console.log(`[LogQueue] No pending jobs; clearing active log stream.`);
+            activeJobId = null;
+        }
+    } else {
+        // Remove from queue if it was queued
+        const idx = pendingJobIds.indexOf(jobId);
+        if (idx !== -1) pendingJobIds.splice(idx, 1);
+    }
+}
+
+/**
+ * Called when a job starts — sets up tail and queue logic.
+ */
 function onJobStart(jobId) {
     const logFilename = `${jobId}.log`;
     tailDockerLogs(jobId, logFilename);
 }
 
-
-
 /**
  * Log job failure.
- * @param {String} jobId - The ID of the failed job.
- * @param {Error} error - The error that caused the failure.
  */
 function logJobFailure(jobId, error) {
-    const errorMessage = {
-        message: `Job ${jobId} failed`,
-        error: error.message,
-    };
+    const errorMessage = `[ERROR] Job ${jobId} failed: ${error.message}`;
     console.error(errorMessage);
-    logStreamEmitter.emit(jobId, `[ERROR] ${error.message}`);
+    logStreamEmitter.emit(jobId, errorMessage);
+    logJobCompletion(jobId); // also mark completed to advance queue
 }
 
 module.exports = {

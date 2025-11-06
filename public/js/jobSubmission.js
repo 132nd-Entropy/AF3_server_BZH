@@ -1,5 +1,4 @@
-import { fetchCurrentLogs } from './logStreaming.js';
-import { fetchQueueStatus } from './queueStatus.js';
+import { fetchQueueStatus } from './queueStatus.js';  // removed fetchCurrentLogs import
 
 function showError(message) {
    const msgElem = document.getElementById("successMessage");
@@ -11,8 +10,10 @@ function showError(message) {
    }
 }
 
+export async function createJSONFile(event) {
+   // Prevent accidental form reloads (important!)
+   if (event) event.preventDefault();
 
-export async function createJSONFile() {
    const projectName = document.getElementById("projectName").value.trim();
    if (!projectName) {
       showError("Please enter a Prediction Name.");
@@ -66,10 +67,7 @@ export async function createJSONFile() {
 
       if (["protein", "dna", "rna"].includes(moleculeType)) {
          sequences.push({
-            [moleculeType]: {
-               id: moleculeID,
-               sequence: input
-            }
+            [moleculeType]: { id: moleculeID, sequence: input }
          });
       } else if (moleculeType === "ligand") {
          const ligandAmount = parseInt(ligandAmountElement.value.trim(), 10) || 1;
@@ -96,18 +94,16 @@ export async function createJSONFile() {
          errorOccurred = true;
          return;
       }
-   }); // End of moleculeBlocks.forEach loop
+   });
 
    if (errorOccurred) return;
 
-   // Handle dynamic lipid input (if user selected 'addLipids')
+   // Optional lipid section
    const lipidTypeDropdown = document.getElementById("lipidTypeDropdown");
    const lipidAmountDropdown = document.getElementById("lipidAmountDropdown");
-
    if (lipidTypeDropdown && lipidAmountDropdown) {
       const lipidType = lipidTypeDropdown.value;
       const lipidAmount = parseInt(lipidAmountDropdown.value, 10) || 0;
-
       for (let i = 0; i < lipidAmount; i++) {
          sequences.push({
             ligand: {
@@ -118,7 +114,6 @@ export async function createJSONFile() {
          moleculeCounter++;
       }
    }
-
 
    const jsonData = {
       name: projectName,
@@ -131,9 +126,7 @@ export async function createJSONFile() {
    try {
       const response = await fetch("/create-json", {
          method: "POST",
-         headers: {
-            "Content-Type": "application/json",
-         },
+         headers: { "Content-Type": "application/json" },
          body: JSON.stringify({
             filename: projectName,
             content: jsonData,
@@ -147,13 +140,12 @@ export async function createJSONFile() {
 
          const jobId = result.jobId;
          if (jobId) {
-            console.log(`Starting log streaming for Job ID: ${jobId}`);
-            fetchCurrentLogs(jobId); // Stream logs for the new job
-         } else {
-            console.error("Job ID is undefined in the response.");
+            console.log(`✅ Job queued: ${jobId}`);
+            // 🧠 IMPORTANT: Do NOT open new SSE connection here
+            // The unified /logs stream in main.js already handles output
          }
 
-         fetchQueueStatus(); // Update the queue
+         await fetchQueueStatus(); // Refresh queue info
       } else {
          showError(`Error: ${result.error}`);
       }
@@ -163,7 +155,7 @@ export async function createJSONFile() {
    }
 }
 
-// Function generateLipidId is good as-is
+// unchanged
 function generateLipidId(index) {
    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
    let id = '';

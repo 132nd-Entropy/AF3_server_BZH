@@ -18,7 +18,7 @@ app.use(express.static('public'));
 
 // Routes
 app.get('/stream-logs', logController.streamServerLogs);
-
+app.get('/logs', logController.streamServerLogs);
 
 app.get('/reconnect-logs', (req, res) => {
     const { jobId } = req.query;

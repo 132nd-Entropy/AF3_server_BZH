@@ -1,83 +1,64 @@
-let eventSource = null;
+// logStreaming.js — unified-stream mode (no per-job EventSource here)
+
 let currentJobId = null;
 
 /**
- * Fetch and display logs for a job in the frontend.
- * @param {string} jobId - The ID of the job to fetch logs for.
+ * Optional UI helper: clear the visible log box.
+ * Safe to call before starting a new job if you want a clean window.
+ */
+export function clearVisibleLogs() {
+  const el =
+    document.getElementById("log-output") ||
+    document.getElementById("logsDisplay");
+  if (!el) return;
+  if (el.tagName === "TEXTAREA") {
+    el.value = "";
+  } else {
+    el.textContent = "";
+  }
+}
+
+/**
+ * Kept for compatibility with existing imports.
+ * In unified mode, we DO NOT open an EventSource here.
+ * We can update the header/textarea to note which job the UI is focusing on,
+ * but the actual streaming is handled by main.js's single EventSource('/logs').
  */
 export function fetchCurrentLogs(jobId) {
-    if (!jobId) {
-        console.error("No jobId provided for fetching logs.");
-        return;
+  if (!jobId) return;
+  currentJobId = jobId;
+  // (Optional) annotate the visible log area with a marker:
+  const el =
+    document.getElementById("log-output") ||
+    document.getElementById("logsDisplay");
+  if (el) {
+    const marker = `\n--- Switched UI focus to job ${jobId} ---\n`;
+    if (el.tagName === "TEXTAREA") {
+      el.value += marker;
+      el.scrollTop = el.scrollHeight;
+    } else {
+      const div = document.createElement("div");
+      div.textContent = marker;
+      el.appendChild(div);
+      el.scrollTop = el.scrollHeight;
     }
-
-    if (eventSource && currentJobId === jobId) {
-        console.log(`Already connected to log stream for Job ${jobId}.`);
-        return;
-    }
-
-    if (eventSource) {
-        console.log("Stopping previous log stream...");
-        eventSource.close();
-        eventSource = null;
-    }
-
-    console.log(`Connecting to log stream for Job ${jobId}...`);
-    currentJobId = jobId;
-
-    // Store the jobId in localStorage for reconnection after page reload
-    localStorage.setItem("currentJobId", jobId);
-
-    const logsDisplay = document.getElementById("logsDisplay");
-    if (!logsDisplay) {
-        console.error("Logs display element not found.");
-        return;
-    }
-
-    logsDisplay.value = `[Connected to log stream for Job ${jobId}]\n`;
-
-    eventSource = new EventSource(`/stream-logs?jobId=${jobId}`);
-
-    eventSource.onmessage = (event) => {
-        const logLine = event.data;
-        logsDisplay.value += logLine + "\n";
-        logsDisplay.scrollTop = logsDisplay.scrollHeight;
-    };
-
-    eventSource.onerror = () => {
-        console.error("Error receiving server logs. Reconnecting in 5 seconds...");
-        logsDisplay.value += "\n[Log stream disconnected. Attempting to reconnect...]\n";
-        eventSource.close();
-        eventSource = null;
-        setTimeout(() => fetchCurrentLogs(jobId), 5000);
-    };
-
-    // Ensure the connection is closed when the page is unloaded
-    window.addEventListener("beforeunload", () => {
-        if (eventSource) {
-            eventSource.close();
-            eventSource = null;
-        }
-    });
+  }
+  // DO NOT create or close EventSource here.
 }
 
 /**
- * Automatically reconnect to the last running job's log stream.
+ * Kept for compatibility. No-op in unified mode.
+ * The single EventSource('/logs') is created once in main.js on page load.
  */
 export function reconnectToPreviousLog() {
-    const storedJobId = localStorage.getItem("currentJobId");
-    if (storedJobId) {
-        console.log(`Reconnecting to logs for stored Job ID: ${storedJobId}`);
-        fetchCurrentLogs(storedJobId);
-    } else {
-        console.log("No previous job log to reconnect.");
-    }
+  // Previously restored a per-job SSE; now unnecessary.
+  return;
 }
 
 /**
- * Clear the stored job ID when the job completes or fails.
+ * Clear any stored job focus without touching the SSE connection.
  */
 export function clearStoredJobId() {
-    localStorage.removeItem("currentJobId");
-    currentJobId = null;
+  try { localStorage.removeItem("currentJobId"); } catch {}
+  currentJobId = null;
 }
