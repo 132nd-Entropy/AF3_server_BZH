@@ -62,3 +62,31 @@ export function clearStoredJobId() {
   try { localStorage.removeItem("currentJobId"); } catch {}
   currentJobId = null;
 }
+
+export async function loadHistoricalLogs(jobId, tailBytes = 20000) {
+  if (!jobId) return;
+  try {
+    const res = await fetch(`/logs/history/${encodeURIComponent(jobId)}?tailBytes=${tailBytes}`);
+    if (!res.ok) return;
+
+    const text = await res.text();
+    const el =
+      document.getElementById("log-output") ||
+      document.getElementById("logsDisplay");
+    if (!el) return;
+
+    // Append without nuking live SSE stream
+    if (el.tagName === "TEXTAREA") {
+      // only append if not already present
+      if (!el.value.includes(text.trim())) {
+        el.value += (el.value ? "\n" : "") + text;
+      }
+      el.scrollTop = el.scrollHeight;
+    } else {
+      el.textContent += (el.textContent ? "\n" : "") + text;
+      el.scrollTop = el.scrollHeight;
+    }
+  } catch (e) {
+    console.warn('[loadHistoricalLogs] failed:', e);
+  }
+}

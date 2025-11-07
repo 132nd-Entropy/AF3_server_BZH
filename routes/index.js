@@ -10,6 +10,7 @@ const queueController = require('../controllers/queueController');
 // API Endpoints
 router.post('/create-json', jobController.createJson);
 router.get('/queue-status', queueController.getQueueStatus);
+router.get('/logs/history/:jobId', logController.getHistoricalLogs);
 
 // New SSE Endpoint for Log Streaming
 router.get('/server-logs', logController.streamServerLogs);

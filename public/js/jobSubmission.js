@@ -146,7 +146,7 @@ export async function createJSONFile(event) {
          const jobId = result.jobId;
          if (jobId) {
             console.log(`✅ Job queued: ${jobId}`);
-            // Do not open a new SSE connection here; main.js handles logs
+            try { localStorage.setItem('currentJobId', jobId); } catch {}
          }
 
          await fetchQueueStatus(); // Refresh queue info

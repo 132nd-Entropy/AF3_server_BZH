@@ -161,6 +161,42 @@ function logJobFailure(jobId, error) {
     logJobCompletion(jobId); // also mark completed to advance queue
 }
 
+// Return historical logs for a job from docker-logs/<jobId>.log
+function getHistoricalLogs(req, res) {
+  try {
+    const jobId = req.params.jobId;
+    if (!jobId) return res.status(400).send('Missing jobId');
+
+    const tailBytes = Math.min(
+      Math.max(parseInt(req.query.tailBytes || '20000', 10), 1000),
+      2_000_000
+    );
+
+    const logDir = path.join(__dirname, '../docker-logs');
+    const filePath = path.join(logDir, `${jobId}.log`);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).send('Log file not found for this job.');
+    }
+
+    const stat = fs.statSync(filePath);
+    const start = Math.max(0, stat.size - tailBytes);
+
+    const fd = fs.openSync(filePath, 'r');
+    const buf = Buffer.alloc(stat.size - start);
+    fs.readSync(fd, buf, 0, buf.length, start);
+    fs.closeSync(fd);
+
+    // Return as plain text (easier to append to a <pre> or <textarea>)
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.status(200).send(buf.toString('utf-8'));
+  } catch (err) {
+    console.error('[getHistoricalLogs] error:', err);
+    res.status(500).send('Failed to read historical logs');
+  }
+}
+
+
 module.exports = {
     streamServerLogs,
     logJobCompletion,
@@ -168,6 +204,9 @@ module.exports = {
     tailDockerLogs,
     logStreamEmitter,
     onJobStart,
+    getHistoricalLogs,
 };
+
+
 
 console.log('logController.js loaded successfully');

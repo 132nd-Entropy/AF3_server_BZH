@@ -3,12 +3,15 @@ import { fetchQueueStatus, getCurrentJob } from './queueStatus.js';
 import { addMolecule } from './moleculeManager.js';
 import { createJSONFile } from './jobSubmission.js';
 import { handleOptionalInputChange } from './moleculeManager.js';
+import { loadHistoricalLogs } from './logStreaming.js';
 
 let currentJobId = null;
 let consecutiveErrorCount = 0;
 let queuePollingInterval = null;
+// NEW: gate to avoid double-loading history for the same job
+let historyLoadedForJobId = null;
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     console.log('[BOOT] main.js loaded');
 
     // Optional input dropdown listener for dynamic lipid creation
@@ -48,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Start polling the queue; no per-job SSE reconnections here
-    initializeQueueStatusAndLogs();
+    await initializeQueueStatusAndLogs();
     queuePollingInterval = setInterval(fetchQueueStatusAndUpdateLogs, 5000);
     addMolecule(); // Automatically add the first molecule block
 
@@ -96,7 +99,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function initializeQueueStatusAndLogs() {
     try {
-        // No per-job SSE reconnect here
+        // Ensure queue state is fresh so getCurrentJob() returns the latest info
+        await fetchQueueStatus();
+
+        // Resolve current job: prefer backend, fallback to localStorage
+        let jobId = null;
+        try {
+            const cj = getCurrentJob(); // synchronous accessor of last fetched state
+            jobId = cj?.id ?? null;
+        } catch {}
+        if (!jobId) {
+            try { jobId = localStorage.getItem('currentJobId') || null; } catch {}
+        }
+
+        // Load historical logs BEFORE live SSE appends more lines
+        if (jobId) {
+            currentJobId = jobId;
+            try { localStorage.setItem('currentJobId', jobId); } catch {}
+            if (historyLoadedForJobId !== jobId) {
+                await loadHistoricalLogs(jobId, 20000);
+                historyLoadedForJobId = jobId;
+            }
+        }
+
         consecutiveErrorCount = 0;
     } catch (error) {
         console.error('Error initializing queue status and logs:', error);
@@ -113,6 +138,12 @@ async function fetchQueueStatusAndUpdateLogs() {
         if (currentJob && currentJob.status === 'processing' && currentJob.id !== currentJobId) {
             console.log(`Switching UI focus to processing job ${currentJob.id}`);
             currentJobId = currentJob.id;
+            try { localStorage.setItem('currentJobId', currentJobId); } catch {}
+            // Load historical lines for the newly focused job (once)
+            if (historyLoadedForJobId !== currentJobId) {
+                await loadHistoricalLogs(currentJobId, 20000);
+                historyLoadedForJobId = currentJobId;
+            }
         } else if (!currentJob && currentJobId) {
             console.log('No job is currently processing.');
             currentJobId = null;
@@ -156,7 +187,8 @@ function toggleLigandAmountField(selectElement) {
 
     if (ligandAmountInput) {
         const isLigand = selectElement.value === "ligand";
-        ligamentAmountInput.style.display = isLigand ? "inline-block" : "none";
+        // FIX: variable name was 'ligamentAmountInput' before
+        ligandAmountInput.style.display = isLigand ? "inline-block" : "none";
         ligandAmountInput.value = isLigand ? "1" : "";
     }
 }
