@@ -5,6 +5,13 @@ import { createJSONFile } from './jobSubmission.js';
 import { handleOptionalInputChange } from './moleculeManager.js';
 import { loadHistoricalLogs } from './logStreaming.js';
 
+
+// Extract jobId like: "[Job f1802c26-9e69-4677-b8a1-966dcc4abbe1] ..."
+function extractJobIdFromLine(line) {
+    const m = line && line.match(/\[Job\s+([0-9a-fA-F-]{36})]/);
+    return m ? m[1] : null;
+}
+
 let currentJobId = null;
 let consecutiveErrorCount = 0;
 let queuePollingInterval = null;
@@ -67,7 +74,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             evt.onopen = () => console.log('[SSE] /logs opened');
 
-            evt.onmessage = (e) => {
+            evt.onmessage = async (e) => {
+                // If we don't know the job yet, try to infer it from the incoming line
+                if (!currentJobId) {
+                    const maybe = extractJobIdFromLine(e.data);
+                    if (maybe) {
+                        currentJobId = maybe;
+                        try { localStorage.setItem('currentJobId', currentJobId); } catch {}
+                        if (historyLoadedForJobId !== currentJobId) {
+                            await loadHistoricalLogs(currentJobId, 50000);
+                            historyLoadedForJobId = currentJobId;
+                        }
+                    }
+                }
+
                 if (!logContainer) {
                     console.log("LOG:", e.data);
                     return;

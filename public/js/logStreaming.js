@@ -1,4 +1,4 @@
-// logStreaming.js — unified-stream mode (no per-job EventSource here)
+// public/js/logStreaming.js — unified-stream mode (no per-job EventSource here)
 
 let currentJobId = null;
 
@@ -27,7 +27,6 @@ export function clearVisibleLogs() {
 export function fetchCurrentLogs(jobId) {
   if (!jobId) return;
   currentJobId = jobId;
-  // (Optional) annotate the visible log area with a marker:
   const el =
     document.getElementById("log-output") ||
     document.getElementById("logsDisplay");
@@ -51,8 +50,7 @@ export function fetchCurrentLogs(jobId) {
  * The single EventSource('/logs') is created once in main.js on page load.
  */
 export function reconnectToPreviousLog() {
-  // Previously restored a per-job SSE; now unnecessary.
-  return;
+  return; // no-op
 }
 
 /**
@@ -63,30 +61,60 @@ export function clearStoredJobId() {
   currentJobId = null;
 }
 
-export async function loadHistoricalLogs(jobId, tailBytes = 20000) {
+/**
+ * Load historical logs for a job from /logs/history/:jobId.
+ * Retries briefly to avoid a race where the log file hasn't been created yet.
+ */
+export async function loadHistoricalLogs(jobId, tailBytes = 20000, tries = 6, delayMs = 500) {
   if (!jobId) return;
-  try {
-    const res = await fetch(`/logs/history/${encodeURIComponent(jobId)}?tailBytes=${tailBytes}`);
-    if (!res.ok) return;
 
-    const text = await res.text();
-    const el =
-      document.getElementById("log-output") ||
-      document.getElementById("logsDisplay");
-    if (!el) return;
+  for (let attempt = 1; attempt <= tries; attempt++) {
+    try {
+      const res = await fetch(`/logs/history/${encodeURIComponent(jobId)}?tailBytes=${tailBytes}`);
 
-    // Append without nuking live SSE stream
-    if (el.tagName === "TEXTAREA") {
-      // only append if not already present
-      if (!el.value.includes(text.trim())) {
-        el.value += (el.value ? "\n" : "") + text;
+      // With backend change, this should be 200 even if empty — but handle 404 just in case.
+      if (res.status === 404) {
+        if (attempt < tries) {
+          await new Promise(r => setTimeout(r, delayMs));
+          continue;
+        } else {
+          return; // give up quietly; SSE will keep appending new lines
+        }
       }
-      el.scrollTop = el.scrollHeight;
-    } else {
-      el.textContent += (el.textContent ? "\n" : "") + text;
-      el.scrollTop = el.scrollHeight;
+
+      if (!res.ok) {
+        if (attempt < tries) {
+          await new Promise(r => setTimeout(r, delayMs));
+          continue;
+        } else {
+          return; // bail
+        }
+      }
+
+      const text = await res.text();
+      const el =
+        document.getElementById("log-output") ||
+        document.getElementById("logsDisplay");
+      if (!el) return;
+
+      if (text && text.trim()) {
+        if (el.tagName === "TEXTAREA") {
+          if (!el.value.includes(text.trim())) {
+            el.value += (el.value ? "\n" : "") + text;
+          }
+          el.scrollTop = el.scrollHeight;
+        } else {
+          el.textContent += (el.textContent ? "\n" : "") + text;
+          el.scrollTop = el.scrollHeight;
+        }
+      }
+      return; // success (or empty) -> stop retrying
+    } catch (e) {
+      if (attempt === tries) {
+        console.warn('[loadHistoricalLogs] failed:', e);
+      } else {
+        await new Promise(r => setTimeout(r, delayMs));
+      }
     }
-  } catch (e) {
-    console.warn('[loadHistoricalLogs] failed:', e);
   }
 }

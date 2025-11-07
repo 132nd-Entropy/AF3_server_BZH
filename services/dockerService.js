@@ -20,6 +20,10 @@ function captureContainerLogs(jobId, containerId) {
     }
 
     const logFile = path.join(logDir, `${jobId}.log`);
+
+    // Ensure the log file exists (belt & suspenders; harmless if already created)
+    try { fs.closeSync(fs.openSync(logFile, 'a')); } catch {}
+
     console.log(`[Job ${jobId}] Capturing logs for container: ${containerId}`);
 
     const logStream = spawn('docker', ['logs', '-f', containerId]);
@@ -129,6 +133,11 @@ function runDockerJob(jobId, filePath, callback, onContainerStart) {
         return;
     }
 
+    // 🔧 PRE-CREATE the log file immediately so /logs/history won't 404 on reload
+    try { logController.onJobStart(jobId); } catch (e) {
+        console.warn(`[Job ${jobId}] onJobStart failed: ${e.message}`);
+    }
+
     // Use the container-visible path for --json_path
     const filename = path.basename(fullPath);
     const containerJsonPath = `/home/entropy/AF3_server_BZH/job_data/${filename}`;
@@ -143,12 +152,11 @@ function runDockerJob(jobId, filePath, callback, onContainerStart) {
         '-e', 'NVIDIA_DRIVER_CAPABILITIES=compute,utility',
         '-e', 'JAX_PLATFORMS=cuda',
 
-
         // volumes
         '-v', '/home/entropy/output_alphafold3:/home/entropy/output_alphafold3',
         '-v', '/opt/alphafold3_database:/opt/alphafold3_database',
         '-v', '/opt/alphafold3_model:/opt/alphafold3_model',
-        '-v', '/home/entropy/AF3_server_BZH/job_data:/home/entropy/AF3_server_BZH/job_data', // <-- added
+        '-v', '/home/entropy/AF3_server_BZH/job_data:/home/entropy/AF3_server_BZH/job_data', // job JSONs
 
         // lib DSOs to mirror your working bash script
         '-v', '/usr/lib/libcuda.so.1:/usr/lib/x86_64-linux-gnu/libcuda.so.1:ro',
@@ -156,7 +164,7 @@ function runDockerJob(jobId, filePath, callback, onContainerStart) {
 
         'alphafold3',
         'python3', 'run_alphafold.py',
-        `--json_path=${containerJsonPath}`, // <-- use container path
+        `--json_path=${containerJsonPath}`, // use container path
         '--model_dir=/opt/alphafold3_model',
         '--db_dir=/opt/alphafold3_database',
         '--output_dir=/home/entropy/output_alphafold3',
@@ -173,9 +181,14 @@ function runDockerJob(jobId, filePath, callback, onContainerStart) {
         if (!containerId) {
             containerId = log; // Capture container ID
             console.log(`[Job ${jobId}] Docker container started with ID: ${containerId}`);
+
             const logFilename = `${jobId}.log`;
+            // Start unified tailing (emits SSE with [Job <uuid>] prefix)
             logController.tailDockerLogs(jobId, logFilename);
-            captureContainerLogs(jobId, containerId); // Start capturing logs
+
+            // Also capture docker logs into the same file
+            captureContainerLogs(jobId, containerId);
+
             if (typeof onContainerStart === 'function') {
                 onContainerStart(containerId);
             }
